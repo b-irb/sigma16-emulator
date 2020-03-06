@@ -70,7 +70,7 @@ int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
     exec_size = ftell(executable);
     fseek(executable, 0L, SEEK_SET);
 
-    if (!((*vm)->mem = malloc(exec_size))) {
+    if (!((*vm)->mem = malloc(1<<16))) {
         perror("unable to allocate vm memory");
         goto error;
     }
@@ -192,8 +192,19 @@ do_nop:
 do_trap:
     INTERP_INST(vm, rrr);
     trace_trap(vm);
-    goto end_hotloop;
 
+    if (vm->cpu.ir.rrr.d == 0) {
+        goto end_hotloop;
+    } else if (vm->cpu.ir.rrr.d == 1){
+        int addr = vm->cpu.regs[vm->cpu.ir.rrr.sa];
+        for (int i=0; i<vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
+            putc(read_mem(vm, addr + i), stdout);
+        }
+    } else {
+        abort();
+    }
+
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_decode_exp:

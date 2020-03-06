@@ -24,11 +24,9 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 #define APPLY_OP_RRR(vm, name, op) \
     INTERP_INST(vm, rrr); \
     trace_rrr(vm, name); \
-    if (vm->cpu.ir.rrr.d != 0) {\
-        SAFE_UPDATE(vm, \
-                vm->cpu.ir.rrr.d, \
-                vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
-    } \
+    SAFE_UPDATE(vm, \
+            vm->cpu.ir.rrr.d, \
+            vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 
 #define INTERP_INST(vm, type) \

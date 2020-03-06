@@ -5,19 +5,72 @@
 #include "cpu.h"
 #include "instructions.h"
 
+static int select_bit(uint16_t val, uint8_t bit_pos) {
+    return (val>>15-bit_pos)&0x1;
+}
+
+static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
+    vm->cpu.adr = vm->cpu.regs[vm->cpu.ir.rx.sa] + vm->cpu.ir.rx.disp;
+    return vm->cpu.adr;
+}
+
+void trace_rx(sigma16_vm_t* vm, char* inst_name) {
+    printf("[%04x]\t\x1b[32m%s\t\x1b[31mR%d\x1b[0m, ",
+            vm->cpu.pc, inst_name, vm->cpu.ir.rx.d);
+
+    if (vm->cpu.ir.rx.disp) {
+        printf("\x1b[33m0x%02x\x1b[0m", vm->cpu.ir.rx.disp);
+    } else {
+        printf("0x%4x", vm->cpu.ir.rx.disp);
+    }
+
+    printf("[\x1b[31mR%d\x1b[0m]\n", vm->cpu.ir.rx.sa);
+}
+
+void trace_rrr(sigma16_vm_t* vm, char* inst_name) {
+    printf("[%04x]\t\x1b[34m%s\t\x1b[31mR%d, R%d, R%d\x1b[0m\n",
+            vm->cpu.pc, inst_name,
+            vm->cpu.ir.rrr.d,
+            vm->cpu.ir.rrr.sa,
+            vm->cpu.ir.rrr.sb);
+}
+
+void trace_branch(sigma16_vm_t* vm, char* inst_name) {
+    printf("[%04x]\t\x1b[33m%s\t\x1b[33m0x%02x\x1b[0m[\x1b[31mR%d\x1b[0m]\n",
+            vm->cpu.pc, inst_name,
+            vm->cpu.ir.rx.disp,
+            vm->cpu.ir.rx.sa);
+}
+
+void trace_trap(sigma16_vm_t* vm) {
+    printf("[%04x]\t\x1b[35mtrap\t\x1b[31mR%d, R%d, R%d\x1b[0m\n",
+            vm->cpu.pc,
+            vm->cpu.ir.rrr.d,
+            vm->cpu.ir.rrr.sa,
+            vm->cpu.ir.rrr.sb);
+}
+
+void trace_cmp(sigma16_vm_t* vm) {
+    printf("[%04x]\t\x1b[32mcmp\t\x1b[31mR%d, R%d\x1b[0m\n",
+            vm->cpu.pc,
+            vm->cpu.ir.rrr.sa,
+            vm->cpu.ir.rrr.sb);
+}
+
 #define SAFE_UPDATE(src, val) \
     if (src != 0) \
         src = val;
 
-#define APPLY_OP_RRR(vm, op) \
+#define APPLY_OP_RRR(vm, name, op) \
     INTERP_INST(vm, rrr); \
+    trace_rrr(vm, name); \
     if (vm->cpu.ir.rrr.d != 0) {\
         vm->cpu.regs[vm->cpu.ir.rrr.d] = vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]; \
-        vm->cpu.pc += sizeof vm->cpu.ir.rrr; \
-    }
+    } \
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 
 #define INTERP_INST(vm, type) \
-    vm->cpu.ir.type = *(sigma16_inst_##type##_t*)&((uint8_t*)vm->mem)[vm->cpu.pc]
+    vm->cpu.ir.type = *(sigma16_inst_##type##_t*)&vm->mem[vm->cpu.pc]
 
 #define INTERP_RX(vm) \
     INTERP_INST(vm, rx); \
@@ -30,9 +83,12 @@
     memset(&reg, 0, sizeof(sigma16_reg_status_t));
 
 
-static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
-    vm->cpu.adr = vm->cpu.ir.rx.sa + vm->cpu.ir.rx.disp;
-    return vm->cpu.adr;
+void write_mem(sigma16_vm_t* vm, uint16_t addr, uint16_t val) {
+    vm->mem[addr] = bswap_16(val);
+}
+
+uint16_t read_mem(sigma16_vm_t* vm, uint16_t addr) {
+    return bswap_16(vm->mem[addr]);
 }
 
 int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
@@ -62,7 +118,7 @@ int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
     fread((*vm)->mem, exec_size, 1, executable);
     return 0;
 error:
-    free(vm);
+    free(*vm);
     return -1;
 }
 
@@ -84,21 +140,20 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
     };
 
     static const void* rx_dispatch_table[] = {
-        &&do_lea, &&do_load, &&do_store
+        &&do_lea, &&do_load, &&do_store, &&do_jump, &&do_jumpc0, &&do_jumpc1,
+        &&do_jumpf, &&do_jumpt
     };
 
-#define DISPATCH() goto *dispatch_table[((uint8_t*)vm->mem)[vm->cpu.pc]>>4]
+    puts("============= CPU TRACE ============= ");
+#define DISPATCH() goto *dispatch_table[(vm->mem[vm->cpu.pc]>>4)&0xf]
     DISPATCH();
 
 do_add:
-    puts("add");
-    APPLY_OP_RRR(vm, +);
+    APPLY_OP_RRR(vm, "add", +);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     SETFLAG(vm->cpu.regs[15], G, vm->cpu.ir.rrr.d > 0);
-    SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.d > 0);
-    SETFLAG(vm->cpu.regs[15], E, vm->cpu.ir.rrr.d == 0);
-    SETFLAG(vm->cpu.regs[15], L, (int16_t)vm->cpu.ir.rrr.d < 0);
+    SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.d > 0); SETFLAG(vm->cpu.regs[15], E, vm->cpu.ir.rrr.d == 0); SETFLAG(vm->cpu.regs[15], L, (int16_t)vm->cpu.ir.rrr.d < 0);
     SETFLAG(vm->cpu.regs[15], L, vm->cpu.ir.rrr.d == 0);
     // TODO overflow & carry
     SETFLAG(vm->cpu.regs[15], V, vm->cpu.ir.rrr.d > 0);
@@ -107,127 +162,139 @@ do_add:
 
     DISPATCH();
 do_sub:
-    puts("sub");
-    APPLY_OP_RRR(vm, -);
+    APPLY_OP_RRR(vm, "sub", -);
     DISPATCH();
 do_mul:
-    puts("mul");
-    APPLY_OP_RRR(vm, *);
+    APPLY_OP_RRR(vm, "mul", *);
     DISPATCH();
 do_div:
-    puts("div");
-    APPLY_OP_RRR(vm, /);
+    APPLY_OP_RRR(vm, "div", /);
     DISPATCH();
 do_cmp:
-    puts("cmp");
     INTERP_INST(vm, rrr);
+    trace_cmp(vm);
 
     CLEARFLAGS(vm->cpu.regs[15]);
-    SETFLAG(vm->cpu.regs[15], G, vm->cpu.ir.rrr.sa > vm->cpu.ir.rrr.sb);
-    SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.sa > (int16_t)vm->cpu.ir.rrr.sb);
-    SETFLAG(vm->cpu.regs[15], E, vm->cpu.ir.rrr.sa == vm->cpu.ir.rrr.sb);
-    SETFLAG(vm->cpu.regs[15], I, vm->cpu.ir.rrr.sa < vm->cpu.ir.rrr.sb);
-    SETFLAG(vm->cpu.regs[15], L, (int16_t)vm->cpu.ir.rrr.sa < (int16_t)vm->cpu.ir.rrr.sb);
+    uint16_t a = vm->cpu.regs[vm->cpu.ir.rrr.sa];
+    uint16_t b = vm->cpu.regs[vm->cpu.ir.rrr.sb];
+    SETFLAG(vm->cpu.regs[15], G, a > b);
+    SETFLAG(vm->cpu.regs[15], g, (int16_t)a > (int16_t)b);
+    SETFLAG(vm->cpu.regs[15], E, a == b);
+    SETFLAG(vm->cpu.regs[15], l, (int16_t)a < (int16_t)b);
+    SETFLAG(vm->cpu.regs[15], L, a < b);
 
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     DISPATCH();
 do_cmplt:
-    puts("cmplt");
-    APPLY_OP_RRR(vm, <);
+    APPLY_OP_RRR(vm, "cmplt", <);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_cmpeq:
-    puts("cmpeq");
-    APPLY_OP_RRR(vm, ==);
+    APPLY_OP_RRR(vm, "cmpeq", ==);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_cmpgt:
-    puts("cmpgt");
-    APPLY_OP_RRR(vm, >);
+    APPLY_OP_RRR(vm, "cmpgt", >);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_invold:
-    puts("invold");
     // APPLY_OP_RRR(vm, ~);
+    INTERP_INST(vm, rrr);
+    trace_rrr(vm, "inv");
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_andold:
-    puts("andold");
-    APPLY_OP_RRR(vm, &);
+    APPLY_OP_RRR(vm, "and", &);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_orold:
-    puts("orold");
-    APPLY_OP_RRR(vm, |);
+    APPLY_OP_RRR(vm, "or", |);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_xorold:
-    puts("xorold");
-    APPLY_OP_RRR(vm, ^);
+    APPLY_OP_RRR(vm, "xor", ^);
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_nop:
-    puts("nop");
-    vm->cpu.pc += sizeof vm->cpu.ir.rrr;
+    INTERP_INST(vm, rrr);
+    trace_rrr(vm, "nop");
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_trap:
-    puts("trap");
+    INTERP_INST(vm, rrr);
+    trace_trap(vm);
     goto end_hotloop;
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_decode_exp:
-    puts("decode EXP");
     INTERP_INST(vm, exp0);
     goto *exp_dispatch_table[vm->cpu.ir.exp0.ab];
 do_rfi:
-    puts("rfi");
+    printf("[%04x]\trfi\n", vm->cpu.pc);
     // TODO rfi
-    vm->cpu.pc += sizeof vm->cpu.ir.exp0;
+    vm->cpu.pc += sizeof vm->cpu.ir.exp0 >> 1;
     DISPATCH();
 // TODO rest of exp instructions
 do_decode_rx:
-    puts("decode RX");
     INTERP_RX(vm);
     goto *rx_dispatch_table[vm->cpu.ir.rx.sb];
 do_lea:
-    puts("lea");
+    trace_rx(vm, "lea");
     vm->cpu.regs[vm->cpu.ir.rx.d] = compute_rx_eaddr(vm);
-    vm->cpu.pc += sizeof vm->cpu.ir.rx;
+    vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_load:
-    puts("load");
-    vm->cpu.regs[vm->cpu.ir.rx.d] = vm->mem[compute_rx_eaddr(vm)];
-    vm->cpu.pc += sizeof vm->cpu.ir.rx;
+    trace_rx(vm, "load");
+    vm->cpu.regs[vm->cpu.ir.rx.d] = read_mem(vm, compute_rx_eaddr(vm));
+    vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_store:
-    puts("store");
-    vm->mem[compute_rx_eaddr(vm)] = vm->cpu.regs[vm->cpu.ir.rx.d];
-    vm->cpu.pc += sizeof vm->cpu.ir.rx;
+    trace_rx(vm, "store");
+    write_mem(vm, compute_rx_eaddr(vm), vm->cpu.regs[vm->cpu.ir.rx.d]);
+    vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 // TODO rest of rx instructions
 do_jump:
-    puts("jump");
+    trace_branch(vm, "jump");
     vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
+do_jumpc0:
+    trace_branch(vm, "jumpc0");
+    if (!select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
+        vm->cpu.pc = compute_rx_eaddr(vm);
+    } else {
+        vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
+    }
+    DISPATCH();
+do_jumpc1:
+    trace_branch(vm, "jumpc1");
+    if (select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
+        vm->cpu.pc = compute_rx_eaddr(vm)>>1;
+    } else {
+        vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
+    }
+    DISPATCH();
 do_jumpf:
-    puts("jumpf");
-    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx);
+    trace_branch(vm, "jumpf");
+    printf("[%04x]\tadd\n", vm->cpu.pc);
+    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)>>1 : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jumpt:
-    puts("jumpt");
-    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx);
+    trace_branch(vm, "jumpt");
+    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)>>1 : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 end_hotloop:
-    dump_regs(&vm->cpu);
+    dump_cpu(&vm->cpu);
     return 0;
 error:
     return -1;

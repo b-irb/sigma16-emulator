@@ -15,15 +15,17 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 }
 
 
-#define SAFE_UPDATE(src, val) \
-    if (src != 0) \
-        src = val;
+#define SAFE_UPDATE(vm, dst, val) \
+    if (dst != 0) \
+        vm->cpu.regs[dst] = val;
 
 #define APPLY_OP_RRR(vm, name, op) \
     INTERP_INST(vm, rrr); \
     trace_rrr(vm, name); \
     if (vm->cpu.ir.rrr.d != 0) {\
-        vm->cpu.regs[vm->cpu.ir.rrr.d] = vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]; \
+        SAFE_UPDATE(vm, \
+                vm->cpu.ir.rrr.d, \
+                vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
     } \
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 
@@ -99,7 +101,7 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
 
     static const void* rx_dispatch_table[] = {
         &&do_lea, &&do_load, &&do_store, &&do_jump, &&do_jumpc0, &&do_jumpc1,
-        &&do_jumpf, &&do_jumpt
+        &&do_jumpf, &&do_jumpt, &&do_jal
     };
 
     puts("============= CPU TRACE ============= ");
@@ -208,12 +210,12 @@ do_decode_rx:
     goto *rx_dispatch_table[vm->cpu.ir.rx.sb];
 do_lea:
     trace_rx(vm, "lea");
-    vm->cpu.regs[vm->cpu.ir.rx.d] = compute_rx_eaddr(vm);
+    SAFE_UPDATE(vm, vm->cpu.ir.rx.d, compute_rx_eaddr(vm));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_load:
     trace_rx(vm, "load");
-    vm->cpu.regs[vm->cpu.ir.rx.d] = read_mem(vm, compute_rx_eaddr(vm));
+    SAFE_UPDATE(vm, vm->cpu.ir.rx.d, read_mem(vm, compute_rx_eaddr(vm)));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_store:
@@ -237,19 +239,23 @@ do_jumpc0:
 do_jumpc1:
     trace_branch(vm, "jumpc1");
     if (select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
-        vm->cpu.pc = compute_rx_eaddr(vm)>>1;
+        vm->cpu.pc = compute_rx_eaddr(vm);
     } else {
         vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     }
     DISPATCH();
 do_jumpf:
     trace_branch(vm, "jumpf");
-    printf("[%04x]\tadd\n", vm->cpu.pc);
-    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)>>1 : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jumpt:
     trace_branch(vm, "jumpt");
-    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)>>1 : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    DISPATCH();
+do_jal:
+    trace_branch(vm, "jal");
+    SAFE_UPDATE(vm, vm->cpu.ir.rx.d, vm->cpu.pc + (sizeof vm->cpu.ir.rx >> 1));
+    vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
 end_hotloop:
     dump_cpu(&vm->cpu);

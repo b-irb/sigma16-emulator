@@ -28,6 +28,6 @@ usage: ./sigma16 [filename]
 
 The executable is the raw machine code produced by the [official](https://jtod.github.io/home/Sigma16/releases/3.1.2/app/Sigma16.html) Sigma16 assembler. A demonstration of the emulator usage is shown below.
 
-![example usage]()
+![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/demo/demo.png)
 
 The instruction tracing and CPU dump can be disabled by including the `-DNO_TRACE` and removing `-DDUMP_CPU`, respectively. Additionally, the VM memory can be dumped to `stderr` by including the `-DDUMP_MEM` flag.

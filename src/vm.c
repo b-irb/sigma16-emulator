@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <unistd.h>
 #include <byteswap.h>
 #include <string.h>
 #include "vm.h"
@@ -42,6 +44,9 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 #define CLEARFLAGS(reg) \
     memset(&reg, 0, sizeof(sigma16_reg_status_t));
 
+void dump_vm_mem(sigma16_vm_t* vm) {
+    write(STDERR_FILENO, vm->mem, 1<<16);
+}
 
 void write_mem(sigma16_vm_t* vm, uint16_t addr, uint16_t val) {
     vm->mem[addr] = bswap_16(val);
@@ -70,7 +75,7 @@ int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
     exec_size = ftell(executable);
     fseek(executable, 0L, SEEK_SET);
 
-    if (!((*vm)->mem = malloc(1<<16))) {
+    if (!((*vm)->mem = calloc(1<<16, 1))) {
         perror("unable to allocate vm memory");
         goto error;
     }
@@ -104,7 +109,9 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
         &&do_jumpf, &&do_jumpt, &&do_jal
     };
 
+#ifndef NO_TRACE
     puts("============= CPU TRACE ============= ");
+#endif
 #define DISPATCH() goto *dispatch_table[(vm->mem[vm->cpu.pc]>>4)&0xf]
     DISPATCH();
 
@@ -269,7 +276,6 @@ do_jal:
     vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
 end_hotloop:
-    dump_cpu(&vm->cpu);
     return 0;
 error:
     return -1;

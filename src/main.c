@@ -19,6 +19,10 @@ int main(int argc, char** argv)
         perror("an error occured during execution");
         goto error;
     }
+    dump_cpu(&vm->cpu);
+#ifdef DUMP_MEM
+    dump_vm_mem(vm);
+#endif
     sigma16_vm_del(vm);
     return 0;
 error:

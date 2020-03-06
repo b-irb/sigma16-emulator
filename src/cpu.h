@@ -6,7 +6,7 @@
 
 typedef uint16_t sigma16_reg_t;
 
-static union sigma16_inst_variant {
+union sigma16_inst_variant {
     sigma16_inst_rrr_t rrr;
     sigma16_inst_rx_t rx;
     sigma16_inst_exp0_t exp0;
@@ -27,14 +27,15 @@ typedef struct _sigma16_mask_flags {
 } sigma16_mask_flags;
 
 typedef struct _sigma16_reg_status {
-    uint8_t G: 1;
-    uint8_t g: 1;
-    uint8_t E: 1;
-    uint8_t I: 1;
-    uint8_t L: 1;
-    uint8_t V: 1;
-    uint8_t v: 1;
+    uint8_t _padding;
     uint8_t C: 1;
+    uint8_t v: 1;
+    uint8_t V: 1;
+    uint8_t L: 1;
+    uint8_t l: 1;
+    uint8_t E: 1;
+    uint8_t g: 1;
+    uint8_t G: 1;
 } sigma16_reg_status_t;
 
 typedef struct _sigma16_cpu {
@@ -52,3 +53,5 @@ typedef struct _sigma16_cpu {
     sigma16_reg_t ipc;
     sigma16_reg_t vect;
 } sigma16_cpu_t;
+
+void dump_cpu(sigma16_cpu_t*);

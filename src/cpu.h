@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+
 #include "instructions.h"
 
 #define REGSTATUS(vm) (*((sigma16_reg_status_t*)&vm->cpu.regs[15]))
@@ -15,27 +16,27 @@ union sigma16_inst_variant {
 };
 
 typedef struct _sigma16_mask_flags {
-    uint8_t trap: 1;
-    uint8_t overflow: 1;
-    uint8_t div0: 1;
-    uint8_t stackfault: 1;
-    uint8_t segfault: 1;
-    uint8_t privelege: 1;
-    uint8_t timer: 1;
-    uint8_t input: 1;
-    uint8_t output: 1;
+    uint8_t trap : 1;
+    uint8_t overflow : 1;
+    uint8_t div0 : 1;
+    uint8_t stackfault : 1;
+    uint8_t segfault : 1;
+    uint8_t privelege : 1;
+    uint8_t timer : 1;
+    uint8_t input : 1;
+    uint8_t output : 1;
 } sigma16_mask_flags;
 
 typedef struct _sigma16_reg_status {
     uint8_t _padding;
-    uint8_t C: 1;
-    uint8_t v: 1;
-    uint8_t V: 1;
-    uint8_t L: 1;
-    uint8_t l: 1;
-    uint8_t E: 1;
-    uint8_t g: 1;
-    uint8_t G: 1;
+    uint8_t C : 1;
+    uint8_t v : 1;
+    uint8_t V : 1;
+    uint8_t L : 1;
+    uint8_t l : 1;
+    uint8_t E : 1;
+    uint8_t g : 1;
+    uint8_t G : 1;
 } sigma16_reg_status_t;
 
 typedef struct _sigma16_cpu {

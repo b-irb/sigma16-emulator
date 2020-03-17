@@ -1,14 +1,16 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <byteswap.h>
-#include <string.h>
 #include "vm.h"
+
+#include <byteswap.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "cpu.h"
 #include "instructions.h"
 #include "tracing.h"
 
 static int select_bit(uint16_t val, uint8_t bit_pos) {
-    return (val>>15-bit_pos)&0x1;
+    return (val >> 15 - bit_pos) & 0x1;
 }
 
 static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
@@ -17,42 +19,37 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 }
 
 #define SAFE_UPDATE(vm, dst, val) \
-    if (dst != 0) \
-        vm->cpu.regs[dst] = val;
+    if (dst != 0) vm->cpu.regs[dst] = val;
 
 #ifdef TRACE_ENABLE
-#define APPLY_OP_RRR(vm, op) \
-    INTERP_INST(vm, rrr); \
-    sigma16_trap_instruction(vm, RRR); \
-    SAFE_UPDATE(vm, \
-            vm->cpu.ir.rrr.d, \
-            vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
+#define APPLY_OP_RRR(vm, op)                                                 \
+    INTERP_INST(vm, rrr);                                                    \
+    sigma16_trap_instruction(vm, RRR);                                       \
+    SAFE_UPDATE(                                                             \
+        vm, vm->cpu.ir.rrr.d,                                                \
+        vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 #else
-#define APPLY_OP_RRR(vm, op) \
-    INTERP_INST(vm, rrr); \
-    SAFE_UPDATE(vm, \
-            vm->cpu.ir.rrr.d, \
-            vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
+#define APPLY_OP_RRR(vm, op)                                                 \
+    INTERP_INST(vm, rrr);                                                    \
+    SAFE_UPDATE(                                                             \
+        vm, vm->cpu.ir.rrr.d,                                                \
+        vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 #endif
 
 #define INTERP_INST(vm, type) \
     vm->cpu.ir.type = *(sigma16_inst_##type##_t*)&vm->mem[vm->cpu.pc]
 
-#define INTERP_RX(vm) \
+#define INTERP_RX(vm)    \
     INTERP_INST(vm, rx); \
     vm->cpu.ir.rx.disp = bswap_16(vm->cpu.ir.rx.disp)
 
-#define SETFLAG(reg, flag, val) \
-    (*(sigma16_reg_status_t*)&reg).flag = val
+#define SETFLAG(reg, flag, val) (*(sigma16_reg_status_t*)&reg).flag = val
 
-#define CLEARFLAGS(reg) \
-    memset(&reg, 0, sizeof(sigma16_reg_status_t));
+#define CLEARFLAGS(reg) memset(&reg, 0, sizeof(sigma16_reg_status_t));
 
-void dump_vm_mem(sigma16_vm_t* vm) {
-    write(STDERR_FILENO, vm->mem, 1<<16);
-}
+void dump_vm_mem(sigma16_vm_t* vm) { write(STDERR_FILENO, vm->mem, 1 << 16); }
 
 void write_mem(sigma16_vm_t* vm, uint16_t addr, uint16_t val) {
     vm->mem[addr] = bswap_16(val);
@@ -81,7 +78,7 @@ int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
     exec_size = ftell(executable);
     fseek(executable, 0L, SEEK_SET);
 
-    if (!((*vm)->mem = calloc(1<<16, 1))) {
+    if (!((*vm)->mem = calloc(1 << 16, 1))) {
         perror("unable to allocate vm memory");
         goto error;
     }
@@ -99,27 +96,23 @@ void sigma16_vm_del(sigma16_vm_t* vm) {
 }
 
 int sigma16_vm_exec(sigma16_vm_t* vm) {
-
     static const void* dispatch_table[] = {
-        &&do_add, &&do_sub, &&do_mul, &&do_div, &&do_cmp, &&do_cmplt, &&do_cmpeq,
-        &&do_cmpgt, &&do_invold, &&do_andold, &&do_orold, &&do_xorold, &&do_nop,
-        &&do_trap, &&do_decode_exp, &&do_decode_rx
-    };
+        &&do_add,    &&do_sub,    &&do_mul,        &&do_div,
+        &&do_cmp,    &&do_cmplt,  &&do_cmpeq,      &&do_cmpgt,
+        &&do_invold, &&do_andold, &&do_orold,      &&do_xorold,
+        &&do_nop,    &&do_trap,   &&do_decode_exp, &&do_decode_rx};
 
-    static const void* exp_dispatch_table[] = {
-        &&do_rfi
-    };
+    static const void* exp_dispatch_table[] = {&&do_rfi};
 
     static const void* rx_dispatch_table[] = {
-        &&do_lea, &&do_load, &&do_store, &&do_jump, &&do_jumpc0, &&do_jumpc1,
-        &&do_jumpf, &&do_jumpt, &&do_jal
-    };
+        &&do_lea,    &&do_load,  &&do_store, &&do_jump, &&do_jumpc0,
+        &&do_jumpc1, &&do_jumpf, &&do_jumpt, &&do_jal};
 
 #ifndef ENABLE_TRACE
     sigma16_trap_beg_execution(vm);
 #endif
 
-#define DISPATCH() goto *dispatch_table[(vm->mem[vm->cpu.pc]>>4)&0xf]
+#define DISPATCH() goto* dispatch_table[(vm->mem[vm->cpu.pc] >> 4) & 0xf]
     DISPATCH();
 
 do_add:
@@ -127,7 +120,9 @@ do_add:
 
     CLEARFLAGS(vm->cpu.regs[15]);
     SETFLAG(vm->cpu.regs[15], G, vm->cpu.ir.rrr.d > 0);
-    SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.d > 0); SETFLAG(vm->cpu.regs[15], E, vm->cpu.ir.rrr.d == 0); SETFLAG(vm->cpu.regs[15], L, (int16_t)vm->cpu.ir.rrr.d < 0);
+    SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.d > 0);
+    SETFLAG(vm->cpu.regs[15], E, vm->cpu.ir.rrr.d == 0);
+    SETFLAG(vm->cpu.regs[15], L, (int16_t)vm->cpu.ir.rrr.d < 0);
     SETFLAG(vm->cpu.regs[15], L, vm->cpu.ir.rrr.d == 0);
     // TODO overflow & carry
     SETFLAG(vm->cpu.regs[15], V, vm->cpu.ir.rrr.d > 0);
@@ -212,9 +207,9 @@ do_trap:
 
     if (vm->cpu.ir.rrr.d == 0) {
         goto end_hotloop;
-    } else if (vm->cpu.ir.rrr.d == 1){
+    } else if (vm->cpu.ir.rrr.d == 1) {
         int addr = vm->cpu.regs[vm->cpu.ir.rrr.sa];
-        for (int i=0; i<vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
+        for (int i = 0; i < vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
             putc(read_mem(vm, addr + i), stdout);
         }
     } else {
@@ -226,7 +221,7 @@ do_trap:
     DISPATCH();
 do_decode_exp:
     INTERP_INST(vm, exp0);
-    goto *exp_dispatch_table[vm->cpu.ir.exp0.ab];
+    goto* exp_dispatch_table[vm->cpu.ir.exp0.ab];
 do_rfi:
 #ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, EXP);
@@ -238,7 +233,7 @@ do_rfi:
 /* TODO rest of exp instructions */
 do_decode_rx:
     INTERP_RX(vm);
-    goto *rx_dispatch_table[vm->cpu.ir.rx.sb];
+    goto* rx_dispatch_table[vm->cpu.ir.rx.sb];
 do_lea:
 #ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, RX);
@@ -291,13 +286,15 @@ do_jumpf:
 #ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, RX);
 #endif
-    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
+                                   : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jumpt:
 #ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, RX);
 #endif
-    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm) : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
+                                  : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jal:
 #ifdef ENABLE_TRACE

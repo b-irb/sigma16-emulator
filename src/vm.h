@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "cpu.h"
 
 typedef struct _sigma16_vm {

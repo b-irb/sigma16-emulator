@@ -1,8 +1,8 @@
 #include <stdio.h>
+
 #include "vm.h"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: %s [filename]\n", argv[0]);
         return -1;

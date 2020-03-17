@@ -1,8 +1,8 @@
 # compiler flags
-CFLAGS := -O2 -flto -DDUMP_CPU
+CFLAGS := -O2 -flto -DENABLE_TRACE
 
 # object files
-OBJ := src/main.o src/vm.o src/cpu.o src/tracing.o
+OBJ := src/main.o src/tracing.o src/vm.o
 
 .PHONY: all
 all: sigma16

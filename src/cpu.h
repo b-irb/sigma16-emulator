@@ -53,5 +53,3 @@ typedef struct _sigma16_cpu {
     sigma16_reg_t ipc;
     sigma16_reg_t vect;
 } sigma16_cpu_t;
-
-void dump_cpu(sigma16_cpu_t*);

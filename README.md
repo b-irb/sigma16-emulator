@@ -30,4 +30,6 @@ The executable is the raw machine code produced by the [official](https://jtod.g
 
 ![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/demo/demo.png)
 
-The instruction tracing and CPU dump can be disabled by including the `-DNO_TRACE` and removing `-DDUMP_CPU`, respectively. Additionally, the VM memory can be dumped to `stderr` by including the `-DDUMP_MEM` flag.
+## Customisation
+
+You can disable/cutomise various features by modifying `Makefile`. The compiler flag `-DENABLE_TRACE` can be removed to disable all interrupts. Additionally, a user can modify `tracing.c` to include their own tracing functionality.

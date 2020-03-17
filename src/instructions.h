@@ -1,6 +1,10 @@
 #pragma once
 #include <stdint.h>
 
+enum sigma16_instruction_fmt {
+    RRR, RX, EXP
+};
+
 typedef struct _sigma16_inst_rrr {
     uint8_t d: 4;
     uint8_t op: 4;

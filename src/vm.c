@@ -7,7 +7,10 @@
 
 #include "cpu.h"
 #include "instructions.h"
+
+#ifdef ENABLE_TRACE
 #include "tracing.h"
+#endif
 
 static int select_bit(uint16_t val, uint8_t bit_pos) {
     return (val >> 15 - bit_pos) & 0x1;
@@ -108,7 +111,7 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
         &&do_lea,    &&do_load,  &&do_store, &&do_jump, &&do_jumpc0,
         &&do_jumpc1, &&do_jumpf, &&do_jumpt, &&do_jal};
 
-#ifndef ENABLE_TRACE
+#ifdef ENABLE_TRACE
     sigma16_trap_beg_execution(vm);
 #endif
 
@@ -141,7 +144,9 @@ do_div:
     DISPATCH();
 do_cmp:
     INTERP_INST(vm, rrr);
+#ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, RRR);
+#endif
 
     CLEARFLAGS(vm->cpu.regs[15]);
     uint16_t a = vm->cpu.regs[vm->cpu.ir.rrr.sa];
@@ -172,7 +177,9 @@ do_cmpgt:
 do_invold:
     // APPLY_OP_RRR(vm, ~);
     INTERP_INST(vm, rrr);
+#ifdef ENABLE_TRACE
     sigma16_trap_instruction(vm, RRR);
+#endif
 
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();

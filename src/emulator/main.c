@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "tracing.h"
 #include "vm.h"
 
 void dump_cpu(sigma16_cpu_t*);
@@ -18,6 +19,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 #ifdef ENABLE_TRACE
+    vm->trace_handler = sigma16_trace;
     puts("==== INSTRUCTION TRACE ==== ");
 #endif
     if (sigma16_vm_exec(vm) < 0) {

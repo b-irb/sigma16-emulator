@@ -27,7 +27,7 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 #ifdef TRACE_ENABLE
 #define APPLY_OP_RRR(vm, op)                                                 \
     INTERP_INST(vm, rrr);                                                    \
-    sigma16_trap_instruction(vm, RRR);                                       \
+    sigma16_trace(vm, RRR);                                                  \
     SAFE_UPDATE(                                                             \
         vm, vm->cpu.ir.rrr.d,                                                \
         vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
@@ -111,10 +111,6 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
         &&do_lea,    &&do_load,  &&do_store, &&do_jump, &&do_jumpc0,
         &&do_jumpc1, &&do_jumpf, &&do_jumpt, &&do_jal};
 
-#ifdef ENABLE_TRACE
-    sigma16_trap_beg_execution(vm);
-#endif
-
 #define DISPATCH() goto* dispatch_table[(vm->mem[vm->cpu.pc] >> 4) & 0xf]
     DISPATCH();
 
@@ -145,7 +141,7 @@ do_div:
 do_cmp:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RRR);
+    sigma16_trace(vm, RRR);
 #endif
 
     CLEARFLAGS(vm->cpu.regs[15]);
@@ -178,7 +174,7 @@ do_invold:
     // APPLY_OP_RRR(vm, ~);
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RRR);
+    sigma16_trace(vm, RRR);
 #endif
 
     CLEARFLAGS(vm->cpu.regs[15]);
@@ -200,7 +196,7 @@ do_xorold:
     DISPATCH();
 do_nop:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RRR);
+    sigma16_trace(vm, RRR);
 #endif
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
 
@@ -209,7 +205,7 @@ do_nop:
 do_trap:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RRR);
+    sigma16_trace(vm, RRR);
 #endif
 
     if (vm->cpu.ir.rrr.d == 0) {
@@ -231,7 +227,7 @@ do_decode_exp:
     goto* exp_dispatch_table[vm->cpu.ir.exp0.ab];
 do_rfi:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, EXP);
+    sigma16_trace(vm, EXP);
 #endif
     /* TODO */
     vm->cpu.pc += sizeof vm->cpu.ir.exp0 >> 1;
@@ -243,21 +239,21 @@ do_decode_rx:
     goto* rx_dispatch_table[vm->cpu.ir.rx.sb];
 do_lea:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, compute_rx_eaddr(vm));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_load:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, read_mem(vm, compute_rx_eaddr(vm)));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_store:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     write_mem(vm, compute_rx_eaddr(vm), vm->cpu.regs[vm->cpu.ir.rx.d]);
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
@@ -265,13 +261,13 @@ do_store:
 // TODO rest of rx instructions
 do_jump:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
 do_jumpc0:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     if (!select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -281,7 +277,7 @@ do_jumpc0:
     DISPATCH();
 do_jumpc1:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     if (select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -291,30 +287,27 @@ do_jumpc1:
     DISPATCH();
 do_jumpf:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
                                    : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jumpt:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
                                   : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
     DISPATCH();
 do_jal:
 #ifdef ENABLE_TRACE
-    sigma16_trap_instruction(vm, RX);
+    sigma16_trace(vm, RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, vm->cpu.pc + (sizeof vm->cpu.ir.rx >> 1));
     vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
 
 end_hotloop:
-#ifdef ENABLE_TRACE
-    sigma16_trap_end_execution(vm);
-#endif
     return 0;
 error:
     return -1;

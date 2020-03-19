@@ -2,7 +2,7 @@
 CFLAGS := -O2 -flto -DENABLE_TRACE
 
 # object files
-OBJ := src/main.o src/tracing.o src/vm.o
+OBJ := src/emulator/main.o src/emulator/tracing.o src/emulator/vm.o
 
 .PHONY: all
 all: sigma16

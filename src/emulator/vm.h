@@ -11,6 +11,9 @@ typedef struct _sigma16_vm {
 #ifdef ENABLE_TRACE
     void (*trace_handler)(struct _sigma16_vm*, enum sigma16_instruction_fmt);
 #endif
+#ifdef PYTHON_COMPAT
+    void* py_obj_self;
+#endif
 } sigma16_vm_t;
 
 int sigma16_vm_init(sigma16_vm_t**, char*);

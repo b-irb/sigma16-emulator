@@ -116,7 +116,6 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
 
 do_add:
     APPLY_OP_RRR(vm, +);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     SETFLAG(vm->cpu.regs[15], G, vm->cpu.ir.rrr.d > 0);
     SETFLAG(vm->cpu.regs[15], g, (int16_t)vm->cpu.ir.rrr.d > 0);
@@ -127,7 +126,6 @@ do_add:
     SETFLAG(vm->cpu.regs[15], V, vm->cpu.ir.rrr.d > 0);
     SETFLAG(vm->cpu.regs[15], v, vm->cpu.ir.rrr.d > 0);
     SETFLAG(vm->cpu.regs[15], C, vm->cpu.ir.rrr.d > 0);
-
     DISPATCH();
 do_sub:
     APPLY_OP_RRR(vm, -);
@@ -143,7 +141,6 @@ do_cmp:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
-
     CLEARFLAGS(vm->cpu.regs[15]);
     uint16_t a = vm->cpu.regs[vm->cpu.ir.rrr.sa];
     uint16_t b = vm->cpu.regs[vm->cpu.ir.rrr.sb];
@@ -157,17 +154,14 @@ do_cmp:
     DISPATCH();
 do_cmplt:
     APPLY_OP_RRR(vm, <);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_cmpeq:
     APPLY_OP_RRR(vm, ==);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_cmpgt:
     APPLY_OP_RRR(vm, >);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_invold:
@@ -176,38 +170,32 @@ do_invold:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_andold:
     APPLY_OP_RRR(vm, &);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_orold:
     APPLY_OP_RRR(vm, |);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_xorold:
     APPLY_OP_RRR(vm, ^);
-
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_nop:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
-    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
-
     CLEARFLAGS(vm->cpu.regs[15]);
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     DISPATCH();
 do_trap:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
-
     if (vm->cpu.ir.rrr.d == 0) {
         goto end_hotloop;
     } else if (vm->cpu.ir.rrr.d == 1) {
@@ -232,7 +220,6 @@ do_rfi:
     /* TODO */
     vm->cpu.pc += sizeof vm->cpu.ir.exp0 >> 1;
     DISPATCH();
-
 /* TODO rest of exp instructions */
 do_decode_rx:
     INTERP_RX(vm);

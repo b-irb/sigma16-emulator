@@ -28,7 +28,7 @@ void sigma16_trace(sigma16_vm_t* vm, enum sigma16_instruction_fmt fmt) {
         case RX:
             trace_rx(vm, RX_INST_MNEMONICS[vm->cpu.ir.rx.d]);
             break;
-        case EXP:
+        case EXP0:
             /* TODO EXP */
             break;
     }

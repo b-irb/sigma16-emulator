@@ -227,7 +227,7 @@ do_decode_exp:
     goto* exp_dispatch_table[vm->cpu.ir.exp0.ab];
 do_rfi:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, EXP);
+    vm->trace_handler(vm, EXP0);
 #endif
     /* TODO */
     vm->cpu.pc += sizeof vm->cpu.ir.exp0 >> 1;

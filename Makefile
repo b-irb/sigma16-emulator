@@ -2,12 +2,12 @@
 CFLAGS := -O2 -flto -DENABLE_TRACE
 
 # object files
-OBJ := src/emulator/main.o src/emulator/tracing.o src/emulator/vm.o
+OBJ := src/main.o src/tracing.o src/vm.o
 
 .PHONY: all
-all: sigma16
+all: sigma16-emu
 
-sigma16: $(OBJ)
+sigma16-emu: $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@ 
 
 %.o: %.c
@@ -16,4 +16,4 @@ sigma16: $(OBJ)
 .PHONY: clean
 clean:
 	find -name "*.o" -delete
-	rm -f sigma16
+	rm -f sigma16-emu

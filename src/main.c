@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "tracing.h"
 #include "vm.h"
@@ -8,7 +9,7 @@ void dump_cpu(sigma16_cpu_t*);
 int main(int argc, char** argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: %s [filename]\n", argv[0]);
-        return -1;
+        return EXIT_FAILURE;
     }
 
     char* fname = argv[1];
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
 
     if (sigma16_vm_init(&vm, fname) < 0) {
         perror("failed to initialise vm");
-        return -1;
+        return EXIT_FAILURE;
     }
 #ifdef ENABLE_TRACE
     vm->trace_handler = sigma16_trace;
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
     return 0;
 error:
     sigma16_vm_del(vm);
-    return -1;
+    return EXIT_FAILURE;
 }
 
 void dump_cpu(sigma16_cpu_t* cpu) {

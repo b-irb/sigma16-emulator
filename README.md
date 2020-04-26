@@ -13,9 +13,9 @@ $ cd sigma16-emulator
 $ make
 ```
 
-A `sigma16` executable should then be present in the main repository directory. To use the emulator, specify an executable in the command line arguments.
+A `sigma16-emu` executable should then be present in the main repository directory. To use the emulator, specify an executable in the command line arguments.
 ```
-usage: ./sigma16 [filename]
+usage: ./sigma16-emu [filename]
 ```
 
 Installation and build instructions for Python extension:
@@ -63,3 +63,18 @@ The executable is the raw machine code produced by the [official](https://jtod.g
 ## Customisation
 
 You can disable/cutomise various features by modifying `Makefile`. The compiler flag `-DENABLE_TRACE` can be removed to disable all interrupts. Additionally, a user can modify `tracing.c` to include their own tracing functionality. Further, you can remove `-DENABLE_TRACE` to remove the tracing functionality from the Python extension.
+
+# Tooling
+
+## Assembler
+
+The assembler does not follow the official emulator's assembler syntax, this is intentional. Labels are alpha strings terminated by `:`, every statement must occupy its own line (with the exception of comments which may appear at the end of a statement). Whitespace between operands and indentation is ignored by the assembler. Additionally, the assembler is **case insensitive**.
+
+```armasm
+add r1,R2,R3    ; valid
+ ADd r2  ,R3,R4 ; valid
+test:           ; valid
+tEst:           ; invalid
+```
+
+The assembler will produce a binary file which can be interpreted by the emulator.

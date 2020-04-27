@@ -234,7 +234,7 @@ def parse_lines(lines: List[str]) -> Linker:
 
         try:
             obj = parse_string(content.upper())
-        except ParserError:
+        except ParserError as e:
             print(f"Parsing error: {e.reason}\nL{idx+1}\t{line.strip()}\n")
             errors = True
             continue

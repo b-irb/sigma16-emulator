@@ -289,7 +289,7 @@ def write_code(handle, objs: List[Object]) -> None:
         if isinstance(obj, RRRInstruction):
             head = (obj.opcode << 4) | obj.d.value
             tail = (obj.sa.value << 4) | obj.sb.value
-            handle.write(struct.pack("BB", head, tail))
+            handle.write(struct.pack(">BB", head, tail))
         elif isinstance(obj, RXInstruction):
             head = (15 << 4) | obj.d.value
             body = (obj.sa.value << 4) | obj.opcode
@@ -300,14 +300,14 @@ def write_code(handle, objs: List[Object]) -> None:
 
 def main() -> None:
     if len(sys.argv) != 3:
-        sys.exit(f"usage {sys.argv[0]} in-file out-file")
+        sys.exit(f"usage: {sys.argv[0]} in-file out-file")
 
     ifile, ofile = sys.argv[1:]
 
     try:
         with open(fname := sys.argv[1]) as f:
             lines = f.readlines()
-    except FileNotFoundError:
+    except IOError:
         sys.exit(f"unable to read {fname}")
 
     linker = parse_lines(lines)

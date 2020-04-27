@@ -1,5 +1,5 @@
 # compiler flags
-CFLAGS := -O2 -flto -DENABLE_TRACE
+CFLAGS := -O2 -flto
 
 # object files
 OBJ := src/main.o src/tracing.o src/vm.o

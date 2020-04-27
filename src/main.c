@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "tracing.h"
 #include "vm.h"
 
@@ -27,7 +28,7 @@ int main(int argc, char** argv) {
         perror("an error occured during execution");
         goto error;
     }
-#ifdef ENABLE_TRACE
+#ifdef ENABLE_CPU_DUMP
     dump_cpu(&vm->cpu);
 #endif
 #ifdef ENABLE_DUMP_MEM

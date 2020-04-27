@@ -276,15 +276,21 @@ do_jumpf:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RX);
 #endif
-    vm->cpu.pc = (!vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
-                                   : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    if (!vm->cpu.regs[vm->cpu.ir.rx.d]) {
+        vm->cpu.pc = compute_rx_eaddr(vm);
+    } else {
+        vm->cpu.pc += sizeof(vm->cpu.ir.rx) >> 1;
+    }
     DISPATCH();
 do_jumpt:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RX);
 #endif
-    vm->cpu.pc = (vm->cpu.ir.rx.d ? compute_rx_eaddr(vm)
-                                  : vm->cpu.pc + sizeof vm->cpu.ir.rx >> 1);
+    if (vm->cpu.regs[vm->cpu.ir.rx.d]) {
+        vm->cpu.pc = compute_rx_eaddr(vm);
+    } else {
+        vm->cpu.pc += sizeof(vm->cpu.ir.rx) >> 1;
+    }
     DISPATCH();
 do_jal:
 #ifdef ENABLE_TRACE

@@ -41,7 +41,7 @@ void trace_rx(sigma16_vm_t* vm, const char* inst_name) {
     if (vm->cpu.ir.rx.disp) {
         printf("\x1b[33m0x%02x\x1b[0m", vm->cpu.ir.rx.disp);
     } else {
-        printf("0x%4x", vm->cpu.ir.rx.disp);
+        printf("0x%02x", vm->cpu.ir.rx.disp);
     }
 
     printf("[\x1b[31mR%d\x1b[0m]\n", vm->cpu.ir.rx.sa);

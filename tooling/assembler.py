@@ -48,6 +48,11 @@ class Instruction:
 
 
 @dataclass
+class PseudoInstruction:
+    alias: Instruction
+
+
+@dataclass
 class RRRInstruction(Instruction):
     d: Register
     sa: Register
@@ -90,7 +95,7 @@ INSTRUCTIONS = {
     "CMPLT": (5, RRRInstruction),
     "CMPEQ": (6, RRRInstruction),
     "CMPGT": (7, RRRInstruction),
-    "INV": (8, RRRInstruction),
+    "INV": (8, PseudoInstruction),
     "AND": (9, RRRInstruction),
     "OR": (10, RRRInstruction),
     "XOR": (11, RRRInstruction),
@@ -113,14 +118,67 @@ INSTRUCTIONS = {
     "JUMPGE": (4, RXInstruction),
     "JUMPGT": (5, RXInstruction),
     "JAL": (8, RXInstruction),
+    # Custom instructions
+    "MOV": (-1, PseudoInstruction),
 }
+
+
+def parse_numeric(string: str) -> int:
+    SUPPORTED_BASES = [10, 16, 2, 8]
+
+    for base in SUPPORTED_BASES:
+        try:
+            return int(string, base)
+        except ValueError:
+            pass
+
+    if len(string) == 3 and string[0] == string[2] == "'":
+        return ord(string[1])
+
+    raise ParserError("invalid numeric base")
 
 
 def parse_register(reg: str) -> Register:
     try:
         return Register[reg]
     except KeyError:
-        raise ParserError(f'invalid register: "{register}"')
+        raise ParserError(f'invalid register: "{reg}"')
+
+
+def _parse_inv_inst(opcode: int, string: str) -> RRRInstruction:
+    operand_chunks = string.split(",")
+    operands = [
+        parse_register(operand) for operand in map(lambda c: c.strip(), operand_chunks)
+    ]
+    return RRRInstruction(opcode, *operands, sb=Register["R0"])
+
+
+def _parse_mov_inst(opcode: int, string: str) -> RXInstruction:
+    def parse_reg_or_numeric(string: str):
+        try:
+            return parse_register(string)
+        except ParserError:
+            return parse_numeric(string)
+
+    operand_chunks = string.split(",")
+    d, val = [
+        parse_reg_or_numeric(operand)
+        for operand in map(lambda c: c.strip(), operand_chunks)
+    ]
+    if isinstance(val, Register):
+        return RXInstruction(INSTRUCTIONS["LEA"][0], d=d, sa=val, disp=0)
+    return RXInstruction(INSTRUCTIONS["LEA"][0], d=d, sa=Register["R0"], disp=val)
+
+
+def _parse_pseudo_instruction(opcode: int, string: str) -> Instruction:
+    handlers = {
+        INSTRUCTIONS["INV"][0]: _parse_inv_inst,
+        INSTRUCTIONS["MOV"][0]: _parse_mov_inst,
+    }
+
+    return handlers[opcode](opcode, string)
+
+    raise ParserError("invalid pseudo instruction")
 
 
 def _parse_rrr_instruction(opcode: int, string: str) -> RRRInstruction:
@@ -159,9 +217,9 @@ def _parse_rx_instruction(opcode: int, string: str) -> RXInstruction:
         disp, sa = "".join(operand_chunks[1:]).split("[")
 
     try:
-        disp = int(disp.strip())
-    except ValueError:
-        if not disp.isalpha():
+        disp = parse_numeric(disp.strip())
+    except ParserError:
+        if not is_legal_label_ref(disp.strip()):
             raise ParserError("invalid displacement")
         disp = Identifier(disp)
 
@@ -171,6 +229,7 @@ def _parse_rx_instruction(opcode: int, string: str) -> RXInstruction:
 
 def parse_instruction(string: str) -> Instruction:
     handlers = {
+        PseudoInstruction: _parse_pseudo_instruction,
         RRRInstruction: _parse_rrr_instruction,
         RXInstruction: _parse_rx_instruction,
     }
@@ -184,16 +243,19 @@ def parse_instruction(string: str) -> Instruction:
     return handlers[type_](opcode, "".join(chunks[1:]))
 
 
+def is_legal_label_ref(string: str) -> bool:
+    VALID_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_")
+    return set(string) | VALID_CHARS == VALID_CHARS
+
+
 def parse_label(string: str) -> Identifier:
-    if len(string) < 2:
+    if len(string) < 2 or string.index(":") != len(string) - 1:
         raise ParserError("invalid label")
 
-    for idx, char in enumerate(string):
-        if not char.isalpha():
-            break
+    label = string[:-1]
+    if is_legal_label_ref(label):
+        return label
 
-    if idx == len(string) - 1 and char == ":":
-        return string[:-1]
     raise ParserError("illegal char in label")
 
 
@@ -202,7 +264,7 @@ def parse_data_kw(string: str) -> NumericConstant:
     if chunks[0].strip() != "DATA":
         raise ParserError("missing data keyword")
     try:
-        value = int(chunks[1].strip())
+        value = parse_numeric(chunks[1].strip())
     except ValueError:
         raise ParserError("invalid value")
     return NumericConstant(value)

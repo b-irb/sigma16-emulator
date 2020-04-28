@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "cpu.h"
 #include "instructions.h"
 
@@ -24,7 +25,7 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 #define SAFE_UPDATE(vm, dst, val) \
     if (dst != 0) vm->cpu.regs[dst] = val;
 
-#ifdef TRACE_ENABLE
+#ifdef ENABLE_TRACE
 #define APPLY_OP_RRR(vm, op)                                                 \
     INTERP_INST(vm, rrr);                                                    \
     vm->trace_handler(vm, RRR);                                              \

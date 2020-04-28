@@ -166,11 +166,13 @@ do_cmpgt:
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_invold:
-    // APPLY_OP_RRR(vm, ~);
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
+    SAFE_UPDATE(vm, vm->cpu.ir.rrr.d, ~vm->cpu.regs[vm->cpu.ir.rrr.sa]);
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
+
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();
 do_andold:

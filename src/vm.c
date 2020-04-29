@@ -99,6 +99,13 @@ void sigma16_vm_del(sigma16_vm_t* vm) {
     free(vm);
 }
 
+static void trap_write(sigma16_vm_t* vm) {
+    int addr = vm->cpu.regs[vm->cpu.ir.rrr.sa];
+    for (int i = 0; i < vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
+        putc(read_mem(vm, addr + i), stdout);
+    }
+}
+
 int sigma16_vm_exec(sigma16_vm_t* vm) {
     static const void* dispatch_table[] = {
         &&do_add,       &&do_sub,    &&do_mul,    &&do_div,    &&do_cmp,
@@ -296,17 +303,17 @@ do_trap:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, RRR);
 #endif
-    if (vm->cpu.ir.rrr.d == 0) {
-        goto end_hotloop;
-    } else if (vm->cpu.ir.rrr.d == 1) {
-        int addr = vm->cpu.regs[vm->cpu.ir.rrr.sa];
-        for (int i = 0; i < vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
-            putc(read_mem(vm, addr + i), stdout);
-        }
-    } else {
-        abort();
+    int addr;
+    switch (vm->cpu.ir.rrr.d) {
+        case 0:
+            goto end_hotloop;
+        case 1:
+            trap_write(vm);
+            break;
+        default:
+            fprintf(stderr, "invalid trap: %d\n", vm->cpu.ir.rrr.d);
+            goto error;
     }
-
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     CLEARFLAGS(vm->cpu.regs[15]);
     DISPATCH();

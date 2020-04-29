@@ -4,7 +4,7 @@
 /* Enable post execution CPU dump*/
 #define ENABLE_CPU_DUMP
 
-/*
- *Enable post execution memory dump
- *#define ENABLE_DUMP_EM
- */
+/* Enable post execution memory dump */
+#define ENABLE_DUMP_MEM
+/* Specify memory dump limit (measured in bytes) */
+#define DUMP_MEM_LIM 0x200 >> 1

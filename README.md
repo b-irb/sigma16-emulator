@@ -19,11 +19,11 @@ usage: ./sigma16-emu [filename]
 
 An executable is a file consisting of machine code produced by the local assembler. A demonstration of the emulator usage using one of the included tests (written by John) is shown below.
 
-![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/demo/demo.png)
+![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/demo.png)
 
 To better demonstrate the memory dump feature, `stackarray_simple.bin` was executed and the memory dump display is shown below.
 
-![memory dump]()
+![memory dump](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/mem_dump.png)
 
 ## Python Bindings
 
@@ -166,13 +166,15 @@ We have successfully calculated the 10th fibonacci number, 55.
 
 The assembler will disassemble a specified binary file into a textual representation including the raw binary, file offset, Sigma16 memory offset, and the decoded mnemonics (if any). An example is shown below.
 
-![disassembler output](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/demo/disasm.png)
+![disassembler output](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/disasm.png)
 
 `[file offset|sigma16 offset] <raw hex> <mnemonic>`
 
 The colours are intentional:
 
 ```
+Colour  Object
+------  ------
 Yellow  opcode
 Magenta destination
 Blue    sa register

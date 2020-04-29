@@ -17,9 +17,13 @@ A `sigma16-emu` executable should then be present in the main repository directo
 usage: ./sigma16-emu [filename]
 ```
 
-An executable is a file consisting of machine code produced by the local assembler. A demonstration of the emulator usage is shown below.
+An executable is a file consisting of machine code produced by the local assembler. A demonstration of the emulator usage using one of the included tests (written by John) is shown below.
 
 ![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/demo/demo.png)
+
+To better demonstrate the memory dump feature, `stackarray_simple.bin` was executed and the memory dump display is shown below.
+
+![memory dump]()
 
 ## Python Bindings
 

@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
         perror("failed to initialise vm");
         return EXIT_FAILURE;
     }
+
 #ifdef ENABLE_TRACE
     vm->trace_handler = sigma16_trace;
     puts("Instruction Trace:");
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
 #endif
 #ifdef ENABLE_DUMP_MEM
     puts("Memory:");
-    dump_vm_mem(vm);
+    dump_vm_mem(vm, 0, DUMP_MEM_LIM);
 #endif
     sigma16_vm_del(vm);
     return 0;

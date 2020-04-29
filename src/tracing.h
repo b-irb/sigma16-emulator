@@ -15,4 +15,4 @@
 /* user defined trace handler */
 void sigma16_trace(sigma16_vm_t*, enum sigma16_instruction_fmt);
 void dump_cpu(sigma16_cpu_t*);
-void dump_vm_mem(sigma16_vm_t*);
+void dump_vm_mem(sigma16_vm_t*, size_t, size_t);

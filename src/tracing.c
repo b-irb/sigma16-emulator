@@ -222,13 +222,13 @@ void dump_cpu(sigma16_cpu_t* cpu) {
     printf("\n");
 }
 
-void dump_vm_mem(sigma16_vm_t* vm) {
+void dump_vm_mem(sigma16_vm_t* vm, size_t start, size_t end) {
     int i;
     uint16_t word;
     unsigned char printable;
     unsigned char buf[17] = {};
 
-    for (i = 0; i < DUMP_MEM_LIM; ++i) {
+    for (i = start; i < end; ++i) {
         word = read_mem(vm, i);
 
         if ((i % 16) == 0) {

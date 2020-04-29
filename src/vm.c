@@ -53,8 +53,6 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 
 #define CLEARFLAGS(reg) memset(&reg, 0, sizeof(sigma16_reg_status_t));
 
-void dump_vm_mem(sigma16_vm_t* vm) { write(STDERR_FILENO, vm->mem, 1 << 16); }
-
 void write_mem(sigma16_vm_t* vm, uint16_t addr, uint16_t val) {
     vm->mem[addr] = bswap_16(val);
 }

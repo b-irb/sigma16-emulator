@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 
+#ifdef ENABLE_DEBUGGER
+#include "debugger.h"
+#endif
 #include "cpu.h"
 #include "instructions.h"
 #include "vm.h"
@@ -44,17 +47,21 @@ static void print_value(uint16_t val) {
     }
 }
 
-void sigma16_trace(sigma16_vm_t* vm, enum sigma16_instruction_fmt fmt) {
+void sigma16_trace(sigma16_vm_t* vm, enum sigma16_trace_event event) {
+    if (event == EXEC_START || event == EXEC_END) {
+        return;
+    }
+
     printf(ANSI_OFF "[%04x]\t", vm->cpu.pc);
 
-    switch (fmt) {
-        case RRR:
+    switch (event) {
+        case INST_RRR:
             trace_rrr(vm, RRR_INST_MNEMONICS[vm->cpu.ir.rrr.op]);
             break;
-        case RX:
+        case INST_RX:
             trace_rx(vm, RX_INST_MNEMONICS[vm->cpu.ir.rx.sb]);
             break;
-        case EXP0:
+        case INST_EXP0:
             /* TODO EXP */
             break;
     }
@@ -222,6 +229,20 @@ void dump_cpu(sigma16_cpu_t* cpu) {
     printf("\n");
 }
 
+static void print_array_char(char* buf, int size) {
+    char printable;
+
+    for (int j = 0; j < size; ++j) {
+        printable = buf[j];
+        if (printable != '.') {
+            printf(ANSI_YELLOW "%c" ANSI_OFF, printable);
+        } else {
+            printf(ANSI_WHITE "%c" ANSI_OFF, printable);
+        }
+    }
+    printf("\n");
+}
+
 void dump_vm_mem(sigma16_vm_t* vm, size_t start, size_t end) {
     int i;
     uint16_t word;
@@ -233,15 +254,7 @@ void dump_vm_mem(sigma16_vm_t* vm, size_t start, size_t end) {
 
         if ((i % 16) == 0) {
             if (i != 0) {
-                for (int j = 0; j < 17; ++j) {
-                    printable = buf[j];
-                    if (printable != '.') {
-                        printf(ANSI_YELLOW "%c" ANSI_OFF, printable);
-                    } else {
-                        printf(ANSI_WHITE "%c" ANSI_OFF, printable);
-                    }
-                }
-                printf("\n");
+                print_array_char(buf, 17);
             }
             printf("[%04x] ", i);
         }
@@ -258,9 +271,9 @@ void dump_vm_mem(sigma16_vm_t* vm, size_t start, size_t end) {
     }
 
     while (i++ % 16 != 0) {
-        printf("       ");
+        printf("     ");
     }
 
-    printf("%s\n", buf);
+    print_array_char(buf, 17);
 }
 

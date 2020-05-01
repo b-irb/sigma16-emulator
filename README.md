@@ -1,9 +1,11 @@
 # Alternative Sigma16 Implementation
 
-This is an alternative, CLI based, emulator for Sigma16. Sigma16 is a research architecture developed by [John T. O'Donnell](https://github.com/jtod) and used for the systems course at University of Glasgow. This project also includes Python bindings which allow for high performance while remaining accessible.
+This is an alternative, CLI based, emulator for Sigma16. Sigma16 is a research architecture developed by [John T. O'Donnell](https://github.com/jtod) and used for the systems course at University of Glasgow. This project also includes Python bindings which allow for high performance while remaining accessible. The emulator can execute linearly without any interaction or drop the user in a debugger shell by modifying `config.h`.
 
 While the core ISA has been implemented, the following have **not** been implemented:
 - EXP instructions
+- Debugger breakpoints
+- Debugger restart
 
 Installation and build instructions for C version (includes tracing):
 ```
@@ -24,6 +26,32 @@ An executable is a file consisting of machine code produced by the local assembl
 To better demonstrate the memory dump feature, `stackarray_simple.bin` was executed and the memory dump display is shown below.
 
 ![memory dump](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/mem_dump.png)
+
+## Configuration
+
+You can disable/cutomise various features by modifying `config.h`. Additionally, a user can modify `tracing.c` to include their own tracing functionality. If tracing is disabled the Python bindings will not expose a `trace_handler` kwarg to `sigma16.Emulator`.
+
+## Debugger
+
+If the debugger is enabled the user will be dropped into an interactive environment prior to the execution of the first instruction. At this point the user can run any of the below commands.
+
+```
+Command        : Description
+-------        : -----------
+ ?             : display this message
+ n (int)       : execute n steps
+ i (int) (int) : write value to specified register
+ o (int)       : display value of specified register
+ t             : toggle tracing
+ c             : continue execution
+ d             : dump processor state
+ m (int) ?(int): inspect memory from end to start
+ e             : exit");
+```
+
+However, the initial state of the processor/memory is undefined which affects the utility of commands prior to execution.
+
+![debugger view](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/debugger.png)
 
 ## Python Bindings
 
@@ -98,10 +126,6 @@ RRR:	[01] R3, R3, R4
 RX:	[00] R6, $007b[R0]
 ...
 ```
-
-## Configuration
-
-You can disable/cutomise various features by modifying `config.h`. Additionally, a user can modify `tracing.c` to include their own tracing functionality. If tracing is disabled the Python bindings will not expose a `trace_handler` kwarg to `sigma16.Emulator`.
 
 # Tooling
 

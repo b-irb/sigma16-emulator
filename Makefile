@@ -1,5 +1,5 @@
 # compiler flags
-CFLAGS := -O2 -flto -lreadline
+CFLAGS := -O2 -flto -lreadline -fno-strict-aliasing
 
 # object files
 OBJ := src/main.o src/tracing.o src/vm.o src/debugger.o

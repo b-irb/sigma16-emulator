@@ -1,3 +1,5 @@
+#define ENABLE_DEBUGGER
+
 /* Enable live emulator tracing*/
 #define ENABLE_TRACE
 

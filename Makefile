@@ -1,8 +1,8 @@
 # compiler flags
-CFLAGS := -O2 -flto
+CFLAGS := -O2 -flto -lreadline
 
 # object files
-OBJ := src/main.o src/tracing.o src/vm.o
+OBJ := src/main.o src/tracing.o src/vm.o src/debugger.o
 
 .PHONY: all
 all: sigma16-emu

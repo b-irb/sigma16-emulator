@@ -91,7 +91,7 @@ INSTRUCTIONS = {
     "SUB": (1, RRRInstruction),
     "MUL": (2, RRRInstruction),
     "DIV": (3, RRRInstruction),
-    "CMP": (4, RRRInstruction),
+    "CMP": (4, PseudoInstruction),
     "CMPLT": (5, RRRInstruction),
     "CMPEQ": (6, RRRInstruction),
     "CMPGT": (7, RRRInstruction),
@@ -145,7 +145,7 @@ def parse_register(reg: str) -> Register:
         raise ParserError(f'invalid register: "{reg}"')
 
 
-def _parse_inv_inst(opcode: int, string: str) -> RRRInstruction:
+def _parse_bin_inst(opcode: int, string: str) -> RRRInstruction:
     operand_chunks = string.split(",")
     operands = [
         parse_register(operand) for operand in map(lambda c: c.strip(), operand_chunks)
@@ -172,7 +172,8 @@ def _parse_mov_inst(opcode: int, string: str) -> RXInstruction:
 
 def _parse_pseudo_instruction(opcode: int, string: str) -> Instruction:
     handlers = {
-        INSTRUCTIONS["INV"][0]: _parse_inv_inst,
+        INSTRUCTIONS["CMP"][0]: _parse_bin_inst,
+        INSTRUCTIONS["INV"][0]: _parse_bin_inst,
         INSTRUCTIONS["MOV"][0]: _parse_mov_inst,
     }
 

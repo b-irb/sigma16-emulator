@@ -137,7 +137,7 @@ def decode_rx_inst(binary: bytes, offset: int) -> RXInstruction:
         mnemonic = RX_INSTRUCTIONS[sb]
     except IndexError:
         return None
-    disp = struct.unpack(">h", binary[offset + 2 : offset + 4])[0]
+    disp = struct.unpack(">H", binary[offset + 2 : offset + 4])[0]
 
     return RXInstruction(
         opcode,

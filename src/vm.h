@@ -4,13 +4,19 @@
 
 #include "config.h"
 #include "cpu.h"
+#ifdef ENABLE_TRACE
+#include "events.h"
+#endif
 #include "instructions.h"
 
 typedef struct _sigma16_vm {
     sigma16_cpu_t cpu;
     uint16_t* mem;
+#ifdef ENABLE_DEBUGGER
+    void* debugger;
+#endif
 #ifdef ENABLE_TRACE
-    void (*trace_handler)(struct _sigma16_vm*, enum sigma16_instruction_fmt);
+    void (*trace_handler)(struct _sigma16_vm*, enum sigma16_trace_event);
 #endif
 #ifdef PYTHON_COMPAT
     void* py_obj_self;

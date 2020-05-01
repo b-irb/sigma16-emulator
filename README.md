@@ -29,15 +29,15 @@ To better demonstrate the memory dump feature, `stackarray_simple.bin` was execu
 
 ## Configuration
 
-You can disable/cutomise various features by modifying `config.h`. Additionally, a user can modify `tracing.c` to include their own tracing functionality. If tracing is disabled the Python bindings will not expose a `trace_handler` kwarg to `sigma16.Emulator`.
+You can disable/cutomise various features by modifying `config.h`. Additionally, a user can modify `tracing.c` to include their own tracing functionality. If tracing is disabled the Python bindings will not expose a `trace_handler` kwarg to `sigma16.Emulator`. By default, the interactive debugger is enabled (this includes the Python bindings).
 
 ## Debugger
 
 If the debugger is enabled the user will be dropped into an interactive environment prior to the execution of the first instruction. At this point the user can run any of the below commands.
 
 ```
-Command        : Description
--------        : -----------
+Command          Description
+-------          -----------
  ?             : display this message
  n (int)       : execute n steps
  i (int) (int) : write value to specified register
@@ -46,7 +46,7 @@ Command        : Description
  c             : continue execution
  d             : dump processor state
  m (int) ?(int): inspect memory from end to start
- e             : exit");
+ e             : exit
 ```
 
 However, the initial state of the processor/memory is undefined which affects the utility of commands prior to execution.

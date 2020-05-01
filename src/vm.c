@@ -10,6 +10,7 @@
 #include "instructions.h"
 
 #ifdef ENABLE_TRACE
+#include "events.h"
 #include "tracing.h"
 #endif
 
@@ -28,7 +29,7 @@ static uint16_t compute_rx_eaddr(sigma16_vm_t* vm) {
 #ifdef ENABLE_TRACE
 #define APPLY_OP_RRR(vm, op)                                                 \
     INTERP_INST(vm, rrr);                                                    \
-    vm->trace_handler(vm, RRR);                                              \
+    vm->trace_handler(vm, INST_RRR);                                         \
     SAFE_UPDATE(                                                             \
         vm, vm->cpu.ir.rrr.d,                                                \
         vm->cpu.regs[vm->cpu.ir.rrr.sa] op vm->cpu.regs[vm->cpu.ir.rrr.sb]); \
@@ -106,115 +107,22 @@ static void trap_write(sigma16_vm_t* vm) {
 
 int sigma16_vm_exec(sigma16_vm_t* vm) {
     static const void* dispatch_table[] = {
-        &&do_add,       &&do_sub,    &&do_mul,    &&do_div,    &&do_cmp,
-        &&do_cmplt,     &&do_cmpeq,  &&do_cmpgt,  &&do_invold, &&do_andold,
-        &&do_orold,     &&do_xorold, &&do_nop,    &&do_trap,   &&do_decode_exp,
-        &&do_decode_rx, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op,    &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op};
+        &&do_add,    &&do_sub,    &&do_mul,        &&do_div,
+        &&do_cmp,    &&do_cmplt,  &&do_cmpeq,      &&do_cmpgt,
+        &&do_invold, &&do_andold, &&do_orold,      &&do_xorold,
+        &&do_nop,    &&do_trap,   &&do_decode_exp, &&do_decode_rx};
 
     /* TODO implement EXP instructions*/
     static const void* exp_dispatch_table[] = {&&do_rfi};
 
     static const void* rx_dispatch_table[] = {
-        &&do_lea,    &&do_load,   &&do_store,  &&do_jump,   &&do_jumpc0,
-        &&do_jumpc1, &&do_jumpf,  &&do_jumpt,  &&do_jal,    &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op,
-        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op};
-
+        &&do_lea,    &&do_load,   &&do_store,  &&do_jump,
+        &&do_jumpc0, &&do_jumpc1, &&do_jumpf,  &&do_jumpt,
+        &&do_jal,    &&do_bad_op, &&do_bad_op, &&do_bad_op,
+        &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op};
 #define DISPATCH() goto* dispatch_table[(vm->mem[vm->cpu.pc] >> 4) & 0xf]
+
+    vm->trace_handler(vm, EXEC_START);
     DISPATCH();
 
 do_add:
@@ -242,7 +150,7 @@ do_div:
 do_cmp:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RRR);
+    vm->trace_handler(vm, INST_RRR);
 #endif
     CLEARFLAGS(vm->cpu.regs[15]);
     uint16_t a = vm->cpu.regs[vm->cpu.ir.rrr.sa];
@@ -270,7 +178,7 @@ do_cmpgt:
 do_invold:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RRR);
+    vm->trace_handler(vm, INST_RRR);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rrr.d, ~vm->cpu.regs[vm->cpu.ir.rrr.sa]);
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
@@ -291,7 +199,7 @@ do_xorold:
     DISPATCH();
 do_nop:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RRR);
+    vm->trace_handler(vm, INST_RRR);
 #endif
     CLEARFLAGS(vm->cpu.regs[15]);
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
@@ -299,7 +207,7 @@ do_nop:
 do_trap:
     INTERP_INST(vm, rrr);
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RRR);
+    vm->trace_handler(vm, INST_RRR);
 #endif
     int addr;
     switch (vm->cpu.ir.rrr.d) {
@@ -320,7 +228,7 @@ do_decode_exp:
     goto* exp_dispatch_table[vm->cpu.ir.exp0.ab];
 do_rfi:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, EXP0);
+    vm->trace_handler(vm, INST_EXP0);
 #endif
     /* TODO */
     vm->cpu.pc += sizeof vm->cpu.ir.exp0 >> 1;
@@ -331,21 +239,21 @@ do_decode_rx:
     goto* rx_dispatch_table[vm->cpu.ir.rx.sb];
 do_lea:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, compute_rx_eaddr(vm));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_load:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, read_mem(vm, compute_rx_eaddr(vm)));
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
     DISPATCH();
 do_store:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     write_mem(vm, compute_rx_eaddr(vm), vm->cpu.regs[vm->cpu.ir.rx.d]);
     vm->cpu.pc += sizeof vm->cpu.ir.rx >> 1;
@@ -353,13 +261,13 @@ do_store:
 // TODO rest of rx instructions
 do_jump:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     vm->cpu.pc = compute_rx_eaddr(vm);
     DISPATCH();
 do_jumpc0:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     if (!select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -369,7 +277,7 @@ do_jumpc0:
     DISPATCH();
 do_jumpc1:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     if (select_bit(vm->cpu.regs[15], vm->cpu.ir.rx.d)) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -379,7 +287,7 @@ do_jumpc1:
     DISPATCH();
 do_jumpf:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     if (!vm->cpu.regs[vm->cpu.ir.rx.d]) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -389,7 +297,7 @@ do_jumpf:
     DISPATCH();
 do_jumpt:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     if (vm->cpu.regs[vm->cpu.ir.rx.d]) {
         vm->cpu.pc = compute_rx_eaddr(vm);
@@ -399,7 +307,7 @@ do_jumpt:
     DISPATCH();
 do_jal:
 #ifdef ENABLE_TRACE
-    vm->trace_handler(vm, RX);
+    vm->trace_handler(vm, INST_RX);
 #endif
     SAFE_UPDATE(vm, vm->cpu.ir.rx.d, vm->cpu.pc + (sizeof vm->cpu.ir.rx >> 1));
     vm->cpu.pc = compute_rx_eaddr(vm);
@@ -408,6 +316,7 @@ do_bad_op:
     fprintf(stderr, "invalid opcode: pc=%04x", vm->cpu.pc);
     goto error;
 end_hotloop:
+    vm->trace_handler(vm, EXEC_END);
     return 0;
 error:
     return -1;

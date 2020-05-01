@@ -2,6 +2,10 @@
 #include <Python.h>
 #include <structmember.h>
 
+#include "config.h"
+#ifdef ENABLE_TRACE
+#include "events.h"
+#endif
 #include "vm.h"
 
 typedef struct {
@@ -170,18 +174,18 @@ static void Emulator_dealloc(EmulatorObject* self) {
 }
 
 #ifdef ENABLE_TRACE
-void vm_trace_compat(sigma16_vm_t* vm, enum sigma16_instruction_fmt fmt) {
+void vm_trace_compat(sigma16_vm_t* vm, enum sigma16_trace_event event) {
     PyObject* args;
     PyObject* instruction;
 
-    switch (fmt) {
-        case RRR:
+    switch (event) {
+        case INST_RRR:
             instruction = Sigma16InstructionRRR_FromBytes(vm->cpu.ir.rrr);
             break;
-        case RX:
+        case INST_RX:
             instruction = Sigma16InstructionRX_FromBytes(vm->cpu.ir.rx);
             break;
-        case EXP0:
+        case INST_EXP0:
             instruction = Sigma16InstructionEXP0_FromBytes(vm->cpu.ir.exp0);
             break;
         default:

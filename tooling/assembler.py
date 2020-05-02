@@ -111,15 +111,15 @@ INSTRUCTIONS = {
     "JUMPF": (6, RXInstruction),
     "JUMPT": (7, RXInstruction),
     # JX aliases
-    "JUMPLE": (4, RXInstruction),
-    "JUMPLT": (5, RXInstruction),
-    "JUMPNE": (4, RXInstruction),
-    "JUMPEQ": (5, RXInstruction),
-    "JUMPGE": (4, RXInstruction),
-    "JUMPGT": (5, RXInstruction),
+    "JUMPLE": (-1, RXInstruction),
+    "JUMPLT": (-2, RXInstruction),
+    "JUMPNE": (-3, RXInstruction),
+    "JUMPEQ": (-4, RXInstruction),
+    "JUMPGE": (-5, RXInstruction),
+    "JUMPGT": (-6, RXInstruction),
     "JAL": (8, RXInstruction),
     # Custom instructions
-    "MOV": (-1, PseudoInstruction),
+    "MOV": (-7, PseudoInstruction),
 }
 
 
@@ -145,12 +145,20 @@ def parse_register(reg: str) -> Register:
         raise ParserError(f'invalid register: "{reg}"')
 
 
-def _parse_bin_inst(opcode: int, string: str) -> RRRInstruction:
+def _parse_inv_inst(opcode: int, string: str) -> RRRInstruction:
     operand_chunks = string.split(",")
     operands = [
         parse_register(operand) for operand in map(lambda c: c.strip(), operand_chunks)
     ]
     return RRRInstruction(opcode, *operands, sb=Register["R0"])
+
+
+def _parse_cmp_inst(opcode: int, string: str) -> RRRInstruction:
+    operand_chunks = string.split(",")
+    operands = [
+        parse_register(operand) for operand in map(lambda c: c.strip(), operand_chunks)
+    ]
+    return RRRInstruction(opcode, Register["R0"], *operands)
 
 
 def _parse_mov_inst(opcode: int, string: str) -> RXInstruction:
@@ -172,8 +180,8 @@ def _parse_mov_inst(opcode: int, string: str) -> RXInstruction:
 
 def _parse_pseudo_instruction(opcode: int, string: str) -> Instruction:
     handlers = {
-        INSTRUCTIONS["CMP"][0]: _parse_bin_inst,
-        INSTRUCTIONS["INV"][0]: _parse_bin_inst,
+        INSTRUCTIONS["CMP"][0]: _parse_cmp_inst,
+        INSTRUCTIONS["INV"][0]: _parse_inv_inst,
         INSTRUCTIONS["MOV"][0]: _parse_mov_inst,
     }
 
@@ -197,17 +205,17 @@ def _parse_rrr_instruction(opcode: int, string: str) -> RRRInstruction:
 def _parse_rx_instruction(opcode: int, string: str) -> RXInstruction:
     operand_chunks = string.split(",")
     implicit_dest = {
-        INSTRUCTIONS["JUMP"][0]: Register(0),
-        INSTRUCTIONS["JUMPLE"][0]: Register(1),
-        INSTRUCTIONS["JUMPLT"][0]: Register(3),
-        INSTRUCTIONS["JUMPNE"][0]: Register(2),
-        INSTRUCTIONS["JUMPEQ"][0]: Register(2),
-        INSTRUCTIONS["JUMPGE"][0]: Register(3),
-        INSTRUCTIONS["JUMPGT"][0]: Register(1),
+        INSTRUCTIONS["JUMP"][0]: (INSTRUCTIONS["JUMP"][0], Register(0)),
+        INSTRUCTIONS["JUMPLE"][0]: (INSTRUCTIONS["JUMPC0"][0], Register(1)),
+        INSTRUCTIONS["JUMPLT"][0]: (INSTRUCTIONS["JUMPC1"][0], Register(3)),
+        INSTRUCTIONS["JUMPNE"][0]: (INSTRUCTIONS["JUMPC0"][0], Register(2)),
+        INSTRUCTIONS["JUMPEQ"][0]: (INSTRUCTIONS["JUMPC1"][0], Register(2)),
+        INSTRUCTIONS["JUMPGE"][0]: (INSTRUCTIONS["JUMPC0"][0], Register(3)),
+        INSTRUCTIONS["JUMPGT"][0]: (INSTRUCTIONS["JUMPC1"][0], Register(1)),
     }
 
     if opcode in implicit_dest:
-        d = implicit_dest[opcode]
+        opcode, d = implicit_dest[opcode]
         disp, sa = operand_chunks[0].split("[")
 
     # jumpc0 and jumpc1 specify a bit in r15 as an integer constant

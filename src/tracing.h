@@ -1,4 +1,5 @@
 #pragma once
+#include "events.h"
 #include "instructions.h"
 #include "vm.h"
 

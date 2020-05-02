@@ -6,6 +6,7 @@
 #include "debugger.h"
 #endif
 #include "cpu.h"
+#include "events.h"
 #include "instructions.h"
 #include "vm.h"
 

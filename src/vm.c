@@ -3,6 +3,7 @@
 #include <byteswap.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -81,7 +82,8 @@ int sigma16_vm_init(sigma16_vm_t** vm, char* fname) {
     exec_size = ftell(executable);
     fseek(executable, 0L, SEEK_SET);
 
-    if (!((*vm)->mem = calloc(1 << 16, 1))) {
+    if (((*vm)->mem = mmap(NULL, 1 << 16, PROT_READ | PROT_WRITE,
+                           MAP_ANON | MAP_PRIVATE, 0, 0)) == MAP_FAILED) {
         perror("unable to allocate vm memory");
         goto error;
     }
@@ -94,14 +96,33 @@ error:
 }
 
 void sigma16_vm_del(sigma16_vm_t* vm) {
-    free(vm->mem);
+    munmap(vm->mem, 1 << 16);
     free(vm);
 }
 
 static void trap_write(sigma16_vm_t* vm) {
     int addr = vm->cpu.regs[vm->cpu.ir.rrr.sa];
+
     for (int i = 0; i < vm->cpu.regs[vm->cpu.ir.rrr.sb]; ++i) {
-        putc(read_mem(vm, addr + i), stdout);
+        putc(read_mem(vm, addr + i) & 0xff, stdout);
+    }
+}
+
+__attribute__((always_inline)) static inline void op_div(sigma16_vm_t* vm) {
+    int a, b;
+    int quotient;
+
+    a = vm->cpu.regs[vm->cpu.ir.rrr.sa];
+    b = vm->cpu.regs[vm->cpu.ir.rrr.sb];
+
+    if (!b) {
+        return;
+    }
+    quotient = (int)(a / b);
+    SAFE_UPDATE(vm, vm->cpu.ir.rrr.d, quotient);
+
+    if (vm->cpu.ir.rrr.d != 15) {
+        vm->cpu.regs[15] = a % b;
     }
 }
 
@@ -122,7 +143,9 @@ int sigma16_vm_exec(sigma16_vm_t* vm) {
         &&do_bad_op, &&do_bad_op, &&do_bad_op, &&do_bad_op};
 #define DISPATCH() goto* dispatch_table[(vm->mem[vm->cpu.pc] >> 4) & 0xf]
 
+#ifdef ENABLE_TRACE
     vm->trace_handler(vm, EXEC_START);
+#endif
     DISPATCH();
 
 do_add:
@@ -145,7 +168,12 @@ do_mul:
     APPLY_OP_RRR(vm, *);
     DISPATCH();
 do_div:
-    APPLY_OP_RRR(vm, /);
+    INTERP_INST(vm, rrr);
+#ifdef ENABLE_TRACE
+    vm->trace_handler(vm, INST_RRR);
+#endif
+    op_div(vm);
+    vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     DISPATCH();
 do_cmp:
     INTERP_INST(vm, rrr);
@@ -209,11 +237,10 @@ do_trap:
 #ifdef ENABLE_TRACE
     vm->trace_handler(vm, INST_RRR);
 #endif
-    int addr;
-    switch (vm->cpu.ir.rrr.d) {
+    switch (vm->cpu.regs[vm->cpu.ir.rrr.d]) {
         case 0:
             goto end_hotloop;
-        case 1:
+        case 2:
             trap_write(vm);
             break;
         default:
@@ -316,7 +343,9 @@ do_bad_op:
     fprintf(stderr, "invalid opcode: pc=%04x", vm->cpu.pc);
     goto error;
 end_hotloop:
+#ifdef ENABLE_TRACE
     vm->trace_handler(vm, EXEC_END);
+#endif
     return 0;
 error:
     return -1;

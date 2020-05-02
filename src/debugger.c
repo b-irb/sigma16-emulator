@@ -9,6 +9,7 @@
 #include "tracing.h"
 #include "vm.h"
 
+#ifdef ENABLE_DEBUGGER
 enum debugger_cmd_action { RESUME, PROMPT, ERROR };
 
 static void debugger_teardown(struct debugger_ctx* ctx) {
@@ -557,3 +558,4 @@ error:
     debugger_teardown(ctx);
     return NULL;
 }
+#endif

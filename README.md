@@ -2,6 +2,8 @@
 
 This is an alternative, CLI based, emulator for Sigma16. Sigma16 is a research architecture developed by [John T. O'Donnell](https://github.com/jtod) and used for the systems course at University of Glasgow. This project also includes Python bindings which allow for high performance while remaining accessible. The emulator can execute linearly without any interaction or drop the user in a debugger shell by modifying `config.h`.
 
+### Further Development
+
 While the core ISA has been implemented, the following have **not** been implemented:
 - EXP instructions
 - Debugger breakpoints
@@ -9,7 +11,7 @@ While the core ISA has been implemented, the following have **not** been impleme
 
 ### Performance
 
-The emulator was able to outperform the [official emulator](https://jtod.github.io/home/Sigma16/) by 162,363 times (with tracing disabled). The official emulator took 3m 33.52s whereas the alternative emulator took 0.0024237s (+- 2.45%) to execute 12,951 instructions (using `perf stat`). Further, the memory overhead of the emulator is capped at <6K (mostly VM memory) observed using `valgrind --massif`.
+The emulator was able to outperform the [official emulator](https://jtod.github.io/home/Sigma16/) by 162,363 times (with tracing disabled). The official emulator took 3m 33.52s (+-1) whereas the alternative emulator took 2.4237e-3s (+-2.45%) to execute 12,951 instructions (using `perf stat`). Further, the memory overhead of the emulator is capped at <6K (mostly VM memory) observed using `valgrind --tool=massif`.
 
 ## Installation
 
@@ -25,6 +27,8 @@ A `sigma16-emu` executable should then be present in the main repository directo
 usage: ./sigma16-emu [filename]
 ```
 
+## Demonstration
+
 An executable is a file consisting of machine code produced by the local assembler. A demonstration of the emulator usage using one of the included tests (written by John) is shown below.
 
 ![example usage](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/demo.png)
@@ -33,7 +37,7 @@ To better demonstrate the memory dump feature, `stackarray_simple.bin` was execu
 
 ![memory dump](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/mem_dump.png)
 
-## Configuration
+### Configuration
 
 You can disable/cutomise various features by modifying `config.h`. Additionally, a user can modify `tracing.c` to include their own tracing functionality. If tracing is disabled the Python bindings will not expose a `trace_handler` kwarg to `sigma16.Emulator`. By default, the interactive debugger is enabled (this includes the Python bindings).
 
@@ -71,6 +75,8 @@ $ python setup.py install
 This will create a shared object which the Python interpreter can load as a module using regular `import` syntax.
 
 To interact with the emulator we instantiate a `sigma16.Emulator` object and register a callback using the `trace_handler` kwarg. The callback will be called prior to every instruction executing within the emulator (if the emulator is compiled with `ENABLE_TRACE`), it is responsible for dispatching each instruction type to a different handler within Python.
+
+### Example
 
 Below an example application using the Python bindings for rudimentary tracing is shown.
 ```py
@@ -139,6 +145,8 @@ RX:	[00] R6, $007b[R0]
 
 The assembler will assemble a specified source file into a binary to be ran under the emulator. The assembler uses the same mnemonics as the official emulator but there are a significant syntactic differences. Firstly, the assembler ignores all whitespace and is **case insensitive** (this includes label names).
 
+### Grammar
+
 ```
 labels      = ([a-Z]_) :
 comments    = ; [string]
@@ -155,6 +163,8 @@ f200    mov r16,imm16   Mov imm16 to r16.
 ```
 
 It is encoded into an `lea` instruction. Further, the assembler can decode hexadecimal, octal, binary, decimal, and characters as values.
+
+### Example
 
 An example application is written below:
 ```armasm
@@ -194,7 +204,7 @@ We have successfully calculated the 10th fibonacci number, 55.
 
 ## Disassembler
 
-The assembler will disassemble a specified binary file into a textual representation including the raw binary, file offset, Sigma16 memory offset, and the decoded mnemonics (if any). An example is shown below.
+The assembler will disassemble a specified binary file into a textual representation including the raw binary, file offset, Sigma16 memory offset, and the decoded mnemonics - if any. An example is shown below.
 
 ![disassembler output](https://raw.githubusercontent.com/birb007/sigma16-emulator/master/assets/disasm.png)
 

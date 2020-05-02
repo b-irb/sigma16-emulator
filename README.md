@@ -7,6 +7,12 @@ While the core ISA has been implemented, the following have **not** been impleme
 - Debugger breakpoints
 - Debugger restart
 
+### Performance
+
+The emulator was able to outperform the [official emulator](https://jtod.github.io/home/Sigma16/) by 162,363 times (with tracing disabled). The official emulator took 3m 33.52s whereas the alternative emulator took 0.0024237s (+- 2.45%) to execute 12,951 instructions (using `perf stat`). Further, the memory overhead of the emulator is capped at <6K (mostly VM memory) observed using `valgrind --massif`.
+
+## Installation
+
 Installation and build instructions for C version (includes tracing):
 ```
 $ git clone https://github.com/birb007/sigma16-emulator.git

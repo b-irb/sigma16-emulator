@@ -16,13 +16,15 @@ static void debugger_teardown(struct debugger_ctx* ctx) {
     sigma16_vm_del(ctx->vm);
 }
 
-static int parse_int(char* buf, int def) {
+static int parse_int(char* buf) { return strtol(buf, NULL, 0); }
+
+static int parse_int_default(char* buf, int def) {
     int val;
 
     if (!buf) {
         val = def;
     } else {
-        val = atoi(buf);
+        val = parse_int(buf);
     }
     return val;
 }
@@ -213,13 +215,13 @@ static struct debugger_cmd* parse_cmd_write_reg(struct debugger_ctx* ctx,
     int val;
 
     if ((token = strtok(NULL, " "))) {
-        reg = atoi(token);
+        reg = parse_int(token);
     } else {
         fprintf(stderr, "specify register\n");
         return NULL;
     }
     if ((token = strtok(NULL, " "))) {
-        val = atoi(token);
+        val = parse_int(token);
     } else {
         fprintf(stderr, "specify value\n");
         return NULL;
@@ -234,7 +236,7 @@ static struct debugger_cmd* parse_cmd_read_reg(struct debugger_ctx* ctx,
     int reg;
 
     if ((token = strtok(NULL, " "))) {
-        reg = atoi(token);
+        reg = parse_int(token);
     } else {
         fprintf(stderr, "specify register\n");
         return NULL;
@@ -249,7 +251,7 @@ static struct debugger_cmd* parse_cmd_step(struct debugger_ctx* ctx,
     int steps;
 
     token = strtok(NULL, " ");
-    steps = parse_int(token, 1);
+    steps = parse_int_default(token, 1);
 
     return create_cmd_step(steps);
 }
@@ -269,8 +271,8 @@ static struct debugger_cmd* parse_cmd_dump_mem(struct debugger_ctx* ctx,
     int end;
     int start;
 
-    end = parse_int(strtok(NULL, " "), 0x200 >> 1);
-    start = parse_int(strtok(NULL, " "), 0);
+    end = parse_int_default(strtok(NULL, " "), 0x200 >> 1);
+    start = parse_int_default(strtok(NULL, " "), 0);
     return create_cmd_dump_mem(end, start);
 }
 
@@ -282,7 +284,7 @@ static struct debugger_cmd* parse_cmd_set_breakpoint(struct debugger_ctx* ctx,
     if (!token) {
         fprintf(stderr, "invalid breakpoint\n");
     }
-    addr = atoi(token);
+    addr = parse_int(token);
     return create_cmd_set_breakpoint(addr);
 }
 

@@ -21,6 +21,7 @@ enum debugger_cmd_type {
     STEP,
     CONTINUE,
     TRACE,
+    SET_BREAKPOINT,
     DUMP_CPU,
     DUMP_MEM,
     WRITE_REG,

@@ -133,6 +133,22 @@ static struct debugger_cmd* create_cmd_write_reg(int reg, int val) {
     return cmd;
 }
 
+static struct debugger_cmd* create_cmd_set_breakpoint(int addr) {
+    struct debugger_cmd* cmd;
+    union debugger_arg* arg;
+
+    if (!(cmd = create_cmd())) {
+        return NULL;
+    }
+
+    arg = create_arg(1);
+    arg[0].i = addr;
+
+    cmd->cmd = SET_BREAKPOINT;
+    cmd->args = arg;
+    return cmd;
+}
+
 static struct debugger_cmd* create_cmd_read_reg(int reg) {
     struct debugger_cmd* cmd;
     union debugger_arg* arg;
@@ -258,6 +274,18 @@ static struct debugger_cmd* parse_cmd_dump_mem(struct debugger_ctx* ctx,
     return create_cmd_dump_mem(end, start);
 }
 
+static struct debugger_cmd* parse_cmd_set_breakpoint(struct debugger_ctx* ctx,
+                                                     char* buf) {
+    int addr;
+    char* token = strtok(NULL, " ");
+
+    if (!token) {
+        fprintf(stderr, "invalid breakpoint\n");
+    }
+    addr = atoi(token);
+    return create_cmd_set_breakpoint(addr);
+}
+
 static struct debugger_cmd* parse_cmd_restart(struct debugger_ctx* ctx,
                                               char* buf) {
     char* fname;
@@ -308,6 +336,9 @@ static struct debugger_cmd* parse_cmd(struct debugger_ctx* ctx) {
      */
     if (!strcmp(token, "n")) {
         cmd = parse_cmd_step(ctx, buf);
+    }
+    if (!strcmp(token, "b")) {
+        cmd = parse_cmd_set_breakpoint(ctx, buf);
     }
     if (!strcmp(token, "i")) {
         cmd = parse_cmd_write_reg(ctx, buf);
@@ -363,6 +394,7 @@ static enum debugger_cmd_action debugger_help(struct debugger_ctx* ctx,
         " c             : continue execution\n"
         " d             : dump processor state\n"
         " m (int) ?(int): inspect memory from end to start\n"
+        " b (int)       : set breakpoint at specified address\n"
         " e             : exit");
     return PROMPT;
 }
@@ -397,6 +429,24 @@ static enum debugger_cmd_action debugger_write_reg(struct debugger_ctx* ctx,
     }
 
     ctx->vm->cpu.regs[idx] = cmd->args[1].i;
+    return PROMPT;
+}
+
+static enum debugger_cmd_action debugger_set_breakpoint(
+    struct debugger_ctx* ctx, struct debugger_cmd* cmd) {
+    static int id;
+    struct debugger_bp* bp;
+
+    if (!(bp = malloc(sizeof(*bp)))) {
+        fprintf(stderr, "unable to create breakpoint\n");
+        return ERROR;
+    }
+
+    bp->id = id++;
+    bp->addr = cmd->args[0].i;
+    bp->next = ctx->breakpoints;
+    ctx->breakpoints = bp;
+
     return PROMPT;
 }
 
@@ -466,6 +516,9 @@ static void debugger_interactive(struct debugger_ctx* ctx) {
             case WRITE_REG:
                 action = debugger_write_reg(ctx, cmd);
                 break;
+            case SET_BREAKPOINT:
+                action = debugger_set_breakpoint(ctx, cmd);
+                break;
             /*
              *case RESTART:
              *    action = debugger_restart(ctx, cmd);
@@ -511,7 +564,7 @@ void yield_debugger(sigma16_vm_t* vm, enum sigma16_trace_event event) {
         sigma16_trace(vm, event);
     }
 
-    if (!ctx->n_steps--) {
+    if (!--ctx->n_steps) {
         debugger_interactive(ctx);
     }
 
@@ -524,6 +577,7 @@ void yield_debugger(sigma16_vm_t* vm, enum sigma16_trace_event event) {
 
     for (struct debugger_bp* bp = ctx->breakpoints; bp; bp = bp->next) {
         if (vm->cpu.pc == bp->addr) {
+            printf("breakpoint %d hit\n", bp->id);
             debugger_interactive(ctx);
             break;
         }

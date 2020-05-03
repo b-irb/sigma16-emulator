@@ -6,12 +6,11 @@ This is an alternative, CLI based, emulator for Sigma16. Sigma16 is a research a
 
 While the core ISA has been implemented, the following have **not** been implemented:
 - EXP instructions
-- Debugger breakpoints
 - Debugger restart
 
 ### Performance
 
-The emulator was able to outperform the [official emulator](https://jtod.github.io/home/Sigma16/) by 162,363 times (with tracing disabled). The official emulator took 3m 33.52s (+-1) whereas the alternative emulator took 2.4237e-3s (+-2.45%) to execute 12,951 instructions (using `perf stat`). From the previous results, it can be determined the emulator has a "clock" of **~5.34MHz**. Further, the memory overhead of the emulator is capped at <6K (mostly VM memory) - observed using `valgrind --tool=massif`.
+The emulator was able to outperform the [official emulator](https://jtod.github.io/home/Sigma16/) by 162,363 times (with tracing disabled). The official emulator took 3m 33.52s (+-1) whereas the alternative emulator took 2.4237e-3s (+-2.45%) to execute 12,951 instructions. From the previous results, it can be determined the emulator has a "clock", on my machine, of **~5.34MHz**. Further, the memory overhead of the emulator is capped at <6K (mostly VM memory).
 
 ## Installation
 
@@ -56,6 +55,7 @@ Command          Description
  c             : continue execution
  d             : dump processor state
  m (int) ?(int): inspect memory from end to start
+ b (int)       : set breakpoint at specified address
  e             : exit
 ```
 

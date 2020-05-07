@@ -2,11 +2,11 @@
 
 This is an alternative, CLI based, emulator for Sigma16. Sigma16 is a research architecture developed by [John T. O'Donnell](https://github.com/jtod) and used for the systems course at University of Glasgow. This project also includes Python bindings which allow for high performance while remaining accessible. The emulator can execute linearly without any interaction or drop the user in a debugger shell by modifying `config.h`.
 
-### Further Development
+## Further Development
 
 While the core ISA has been implemented, the following have **not** been implemented:
-- EXP instructions
-- Debugger restart
+-  EXP instructions
+-  Debugger restart
 
 ### Performance
 
@@ -76,7 +76,7 @@ This will create a shared object which the Python interpreter can load as a modu
 
 To interact with the emulator we instantiate a `sigma16.Emulator` object and register a callback using the `trace_handler` kwarg. The callback will be called prior to every instruction executing within the emulator (if the emulator is compiled with `ENABLE_TRACE`), it is responsible for dispatching each instruction type to a different handler within Python.
 
-### Example
+### Python Example
 
 Below an example application using the Python bindings for rudimentary tracing is shown.
 ```py
@@ -139,13 +139,13 @@ RX:	[00] R6, $007b[R0]
 ...
 ```
 
-# Tooling
+## Tooling
 
-## Assembler
+### Assembler
 
 The assembler will assemble a specified source file into a binary to be ran under the emulator. The assembler uses the same mnemonics as the official emulator but there are a significant syntactic differences. Firstly, the assembler ignores all whitespace and is **case insensitive** (this includes label names).
 
-### Grammar
+#### Grammar
 
 ```
 labels      = ([a-Z]_) :
@@ -164,7 +164,7 @@ f200    mov r16,imm16   Mov imm16 to r16.
 
 It is encoded into an `lea` instruction. Further, the assembler can decode hexadecimal, octal, binary, decimal, and characters as values.
 
-### Example
+#### Assembler Example
 
 An example application is written below:
 ```armasm
@@ -202,7 +202,7 @@ General Registers:
 ```
 We have successfully calculated the 10th fibonacci number, 55.
 
-## Disassembler
+### Disassembler
 
 The assembler will disassemble a specified binary file into a textual representation including the raw binary, file offset, Sigma16 memory offset, and the decoded mnemonics - if any. An example is shown below.
 

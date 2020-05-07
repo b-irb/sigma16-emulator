@@ -457,7 +457,7 @@ static enum debugger_cmd_action debugger_read_reg(struct debugger_ctx* ctx,
     int val;
     int idx = cmd->args[0].i;
 
-    if (0 > idx && idx < 15) {
+    if (0 < idx && idx < 15) {
         fprintf(stderr, "invalid register\n");
         return PROMPT;
     }

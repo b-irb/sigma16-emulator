@@ -243,9 +243,6 @@ do_trap:
         case 2:
             trap_write(vm);
             break;
-        default:
-            fprintf(stderr, "invalid trap: %d\n", vm->cpu.ir.rrr.d);
-            goto error;
     }
     vm->cpu.pc += sizeof vm->cpu.ir.rrr >> 1;
     CLEARFLAGS(vm->cpu.regs[15]);

@@ -12,14 +12,11 @@
 typedef struct _sigma16_vm {
     sigma16_cpu_t cpu;
     uint16_t* mem;
-#ifdef ENABLE_DEBUGGER
-    void* debugger;
-#endif
 #ifdef ENABLE_TRACE
     void (*trace_handler)(struct _sigma16_vm*, enum sigma16_trace_event);
 #endif
-#ifdef PYTHON_COMPAT
-    void* py_obj_self;
+#if defined(PYTHON_COMPAT) || defined(ENABLE_DEBUGGER)
+    void* vm_refl;
 #endif
 } sigma16_vm_t;
 

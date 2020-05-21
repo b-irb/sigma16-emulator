@@ -558,7 +558,7 @@ error:
 }
 
 void yield_debugger(sigma16_vm_t* vm, enum sigma16_trace_event event) {
-    struct debugger_ctx* ctx = vm->debugger;
+    struct debugger_ctx* ctx = vm->vm_refl;
 
     ctx->n_events++;
 
@@ -571,10 +571,10 @@ void yield_debugger(sigma16_vm_t* vm, enum sigma16_trace_event event) {
     }
 
     if (event == EXEC_START) {
-        debugger_interactive(vm->debugger);
+        debugger_interactive(vm->vm_refl);
     } else if (event == EXEC_END) {
         puts("Post execution (limited commands).");
-        debugger_interactive(vm->debugger);
+        debugger_interactive(vm->vm_refl);
     }
 
     for (struct debugger_bp* bp = ctx->breakpoints; bp; bp = bp->next) {
@@ -607,7 +607,7 @@ sigma16_vm_t* debugger_init(char* fname) {
     ctx->vm = vm;
     ctx->trace = 1;
 
-    vm->debugger = ctx;
+    vm->vm_refl = ctx;
     vm->trace_handler = yield_debugger;
     return vm;
 error:

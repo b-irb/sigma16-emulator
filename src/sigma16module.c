@@ -192,13 +192,12 @@ void vm_trace_compat(sigma16_vm_t* vm, enum sigma16_trace_event event) {
             return;
     }
 
-    if (!((EmulatorObject*)vm->py_obj_self)->trace_handler) {
+    if (!((EmulatorObject*)vm->vm_refl)->trace_handler) {
         return;
     }
 
     args = PyTuple_Pack(1, instruction);
-    PyObject_CallObject(((EmulatorObject*)vm->py_obj_self)->trace_handler,
-                        args);
+    PyObject_CallObject(((EmulatorObject*)vm->vm_refl)->trace_handler, args);
 }
 #endif
 
@@ -241,7 +240,7 @@ static int Emulator_init(EmulatorObject* self, PyObject* args, PyObject* kwds) {
         return PyErr_SetFromErrno(PyExc_BaseException);
     }
 #ifdef ENABLE_TRACE
-    self->vm->py_obj_self = self;
+    self->vm->vm_refl = self;
     self->vm->trace_handler = vm_trace_compat;
 #endif
     return 0;

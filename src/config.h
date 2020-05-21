@@ -22,3 +22,7 @@
 #if defined(ENABLE_DEBUGGER) && !defined(ENABLE_TRACE)
 #error Debugger support requires tracing
 #endif
+
+#if defined(PYTHON_COMPAT) && defined(ENABLE_DEBUGGER)
+#error Cannot have native debugger and Python bindings simultaneously.
+#endif
